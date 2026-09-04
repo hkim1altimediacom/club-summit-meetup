@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정상회담 출석 체크</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --paper:#F1F3EC;
+  --surface:#FFFFFF;
+  --surface-2:#FBFDF8;
+  --ink:#1E2A22;
+  --ink-muted:#5C6B5F;
+  --ink-faint:#93A092;
+  --border:#DDE3D6;
+  --accent:#C97829;
+  --accent-strong:#A9601C;
+  --accent-ink:#FFFFFF;
+  --attend:#3E8259;
+  --attend-bg:#E4F1E8;
+  --decline:#B4503A;
+  --decline-bg:#F6E7E2;
+  --pending:#8A8272;
+  --pending-bg:#EFECE1;
+  --shadow:0 1px 2px rgba(30,42,34,0.06), 0 10px 28px -14px rgba(30,42,34,0.22);
+  --focus:0 0 0 3px rgba(201,120,41,0.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141C17;
+    --surface:#1C2620;
+    --surface-2:#212C25;
+    --ink:#E9EEE4;
+    --ink-muted:#A9B6A1;
+    --ink-faint:#71806F;
+    --border:#2E3A31;
+    --accent:#E8A24C;
+    --accent-strong:#F2B569;
+    --accent-ink:#1C1305;
+    --attend:#6BBE8B;
+    --attend-bg:#20302A;
+    --decline:#E08A6C;
+    --decline-bg:#38271F;
+    --pending:#C2BAA4;
+    --pending-bg:#2A2A21;
+    --shadow:0 1px 2px rgba(0,0,0,0.35), 0 14px 32px -16px rgba(0,0,0,0.6);
+    --focus:0 0 0 3px rgba(232,162,76,0.4);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141C17;
+  --surface:#1C2620;
+  --surface-2:#212C25;
+  --ink:#E9EEE4;
+  --ink-muted:#A9B6A1;
+  --ink-faint:#71806F;
+  --border:#2E3A31;
+  --accent:#E8A24C;
+  --accent-strong:#F2B569;
+  --accent-ink:#1C1305;
+  --attend:#6BBE8B;
+  --attend-bg:#20302A;
+  --decline:#E08A6C;
+  --decline-bg:#38271F;
+  --pending:#C2BAA4;
+  --pending-bg:#2A2A21;
+  --shadow:0 1px 2px rgba(0,0,0,0.35), 0 14px 32px -16px rgba(0,0,0,0.6);
+  --focus:0 0 0 3px rgba(232,162,76,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{background:var(--paper);}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Gothic A1',-apple-system,'Malgun Gothic',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  padding:32px 16px 64px;
+}
+.wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+.readonly-banner{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  color:var(--ink-muted);
+  font-size:13px;
+  line-height:1.5;
+  padding:10px 14px;
+  border-radius:10px;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  padding:28px 24px;
+}
+.eyebrow{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:var(--accent-strong);
+  text-transform:uppercase;
+  margin:0 0 6px;
+}
+.title-row{display:flex;align-items:flex-start;gap:8px;}
+.title{
+  font-family:'Black Han Sans','Gothic A1',sans-serif;
+  font-weight:400;
+  font-size:38px;
+  line-height:1.15;
+  letter-spacing:-.01em;
+  margin:0;
+  color:var(--ink);
+  text-wrap:balance;
+}
+.meta{
+  list-style:none;
+  margin:20px 0 0;
+  padding:16px 0 0;
+  border-top:1px dashed var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.meta-row{display:flex;align-items:center;gap:10px;}
+.meta-row-cal{align-items:flex-start;}
+.meta-icon{
+  width:28px;height:28px;flex:none;
+  border-radius:8px;
+  background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent-strong);
+}
+.meta-icon svg{width:16px;height:16px;}
+.meta-label{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  width:34px;
+  flex:none;
+}
+.meta-value{
+  font-size:16px;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  flex:1;
+}
+.field-row{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.edit-btn{
+  border:none;
+  background:transparent;
+  color:var(--ink-faint);
+  cursor:pointer;
+  padding:6px;
+  border-radius:8px;
+  display:inline-flex;
+  flex:none;
+  text-decoration:none;
+}
+.edit-btn:hover{background:var(--surface-2);color:var(--accent-strong);}
+.edit-btn:focus-visible,button:focus-visible,input:focus-visible{outline:none;box-shadow:var(--focus);}
+.edit-btn svg{width:15px;height:15px;}
+.edit-input{
+  flex:1;
+  min-width:0;
+  font:inherit;
+  font-size:16px;
+  padding:6px 10px;
+  border-radius:8px;
+  border:1px solid var(--accent);
+  background:var(--surface-2);
+  color:var(--ink);
+}
+.title-row .edit-input{font-family:'Gothic A1',sans-serif;font-size:20px;font-weight:700;}
+.icon-btn{
+  border:none;
+  cursor:pointer;
+  border-radius:8px;
+  width:30px;height:30px;
+  flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.icon-btn svg{width:16px;height:16px;}
+.icon-save{background:var(--attend);color:#fff;}
+.icon-cancel{background:var(--surface-2);color:var(--ink-muted);}
+.calendar{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px;flex:1;}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cal-title{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
+.cal-nav{border:none;background:var(--surface);color:var(--ink-muted);width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
+.cal-nav:hover{color:var(--accent-strong);}
+.cal-weekdays,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-weekdays{text-align:center;font-size:11px;font-weight:700;color:var(--ink-faint);margin-bottom:4px;}
+.cal-wd.cal-sun{color:var(--decline);}
+.cal-wd.cal-sat{color:var(--accent-strong);}
+.cal-grid{gap:2px;}
+.cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;}
+button.cal-day{border:none;background:transparent;color:var(--ink);cursor:pointer;border-radius:8px;font-variant-numeric:tabular-nums;}
+button.cal-day:hover{background:var(--surface);}
+button.cal-day.cal-sun{color:var(--decline);}
+button.cal-day.cal-sat{color:var(--accent-strong);}
+button.cal-day.cal-today{box-shadow:inset 0 0 0 1px var(--border);font-weight:700;}
+button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:none;}
+.cal-footer{display:flex;justify-content:flex-end;margin-top:6px;}
+.cal-cancel{border:none;background:transparent;color:var(--ink-faint);font-size:12px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:8px;}
+.cal-cancel:hover{background:var(--surface);color:var(--ink);}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.section-head h2{font-size:18px;margin:0;font-weight:700;}
+.stats{display:flex;gap:6px;flex-wrap:wrap;}
+.stat{
+  font-size:12px;
+  font-weight:700;
+  padding:5px 10px;
+  border-radius:999px;
+  font-variant-numeric:tabular-nums;
+}
+.stat-yes{background:var(--attend-bg);color:var(--attend);}
+.stat-pending{background:var(--pending-bg);color:var(--pending);}
+.stat-no{background:var(--decline-bg);color:var(--decline);}
+.stat-saving{background:var(--surface);color:var(--ink-faint);border:1px solid var(--border);}
+.budget{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:6px 12px;
+  background:var(--surface-2);
+  border:1px dashed var(--border);
+  border-radius:12px;
+  padding:10px 14px;
+  margin-bottom:14px;
+  font-size:13px;
+}
+.budget-label{font-weight:700;color:var(--ink-muted);flex:none;}
+.budget-formula{color:var(--ink-faint);flex:1;min-width:120px;font-variant-numeric:tabular-nums;}
+.budget-total{font-weight:800;font-size:15px;color:var(--accent-strong);font-variant-numeric:tabular-nums;flex:none;}
+.roster{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.roster-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 10px 10px 14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--surface-2);
+}
+.name{
+  flex:1;
+  min-width:0;
+  font-size:15px;
+  font-weight:500;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.segmented{
+  display:inline-flex;
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  flex:none;
+}
+.segmented button{
+  border:none;
+  background:var(--surface);
+  color:var(--ink-muted);
+  font-size:12px;
+  font-weight:700;
+  padding:7px 10px;
+  cursor:pointer;
+  border-left:1px solid var(--border);
+}
+.segmented button:first-child{border-left:none;}
+.segmented button[data-status="yes"].active{background:var(--attend);color:#fff;}
+.segmented button[data-status="pending"].active{background:var(--pending);color:#fff;}
+.segmented button[data-status="no"].active{background:var(--decline);color:#fff;}
+.remove{
+  border:none;background:transparent;color:var(--ink-faint);
+  cursor:pointer;font-size:16px;line-height:1;width:26px;height:26px;
+  border-radius:8px;flex:none;
+}
+.remove:hover{background:var(--decline-bg);color:var(--decline);}
+.empty{
+  font-size:14px;color:var(--ink-faint);
+  text-align:center;padding:18px 0;margin:0;
+}
+.add-form{
+  display:flex;gap:8px;margin-top:14px;padding-top:14px;
+  border-top:1px dashed var(--border);
+}
+.add-form input{
+  flex:1;min-width:0;
+  font:inherit;font-size:15px;
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--ink);
+}
+.add-form input::placeholder{color:var(--ink-faint);}
+.add-form button{
+  border:none;
+  background:var(--accent);
+  color:var(--accent-ink);
+  font-weight:700;
+  font-size:14px;
+  padding:0 18px;
+  border-radius:10px;
+  cursor:pointer;
+  flex:none;
+}
+.add-form button:hover{background:var(--accent-strong);}
+button:disabled,input:disabled{opacity:.5;cursor:not-allowed;}
+.updated{
+  text-align:center;
+  font-size:12px;
+  color:var(--ink-faint);
+  margin:2px 0 0;
+}
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  background:var(--ink);
+  color:var(--paper);
+  font-size:13px;
+  padding:10px 16px;
+  border-radius:10px;
+  box-shadow:var(--shadow);
+  max-width:calc(100% - 32px);
+  text-align:center;
+  z-index:10;
+}
+@media (prefers-reduced-motion:no-preference){
+  .roster-row,.card{transition:background .15s ease;}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, onSnapshot, setDoc, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, signInAnonymously, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ---------------------------------------------------------------------
+// 1) Firebase 프로젝트 설정을 여기에 붙여넣으세요.
+//    Firebase 콘솔 > 프로젝트 설정 > 내 앱(웹 앱) > SDK 설정 및 구성 에서
+//    복사한 firebaseConfig 객체를 그대로 아래에 붙여넣으면 됩니다.
+//    (이 값들은 브라우저에 노출되는 공개 설정값이라 안전합니다.
+//     실제 접근 제어는 Firestore 보안 규칙에서 합니다.)
+// ---------------------------------------------------------------------
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCFdymGmAZaJQ3VxSaWaBy3kSOamdp8ZK0",
+  authDomain: "club-summit-meetup.firebaseapp.com",
+  projectId: "club-summit-meetup",
+  storageBucket: "club-summit-meetup.firebasestorage.app",
+  messagingSenderId: "47006544538",
+  appId: "1:47006544538:web:7ac016ce63a54378916523"
+};
+
+// 모임(문서) 식별자. 같은 페이지를 다른 모임에도 재사용하려면
+// 이 값만 바꿔서 새로 배포하면 됩니다.
+const EVENT_ID = "summit-2026-09-22";
+
+const PER_PERSON_COST = 50000;
+
+const DEFAULT_STATE = {
+  title: "정상회담",
+  date: "2026-09-22",
+  place: "육각고기",
+  attendees: [
+    {id:"m01", name:"김환", status:"yes"},
+    {id:"m02", name:"엄태인", status:"yes"},
+    {id:"m03", name:"유재형", status:"yes"},
+    {id:"m04", name:"이상현", status:"yes"},
+    {id:"m05", name:"이효성", status:"yes"},
+    {id:"m06", name:"임태영", status:"pending"},
+    {id:"m07", name:"장재성", status:"pending"},
+    {id:"m08", name:"최재영", status:"pending"},
+    {id:"m09", name:"최정", status:"pending"},
+    {id:"m10", name:"홍원일", status:"pending"},
+    {id:"m11", name:"이정희", status:"pending"},
+    {id:"m12", name:"임수철", status:"pending"}
+  ],
+  updatedAt: null
+};
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+  });
+}
+function uid(){
+  return 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+function iconPin(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+}
+function iconCal(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+}
+function iconPencil(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+}
+function iconCheck(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+}
+function iconX(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l18 18"/></svg>';
+}
+function iconSearch(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+}
+function naverMapUrl(place){
+  return 'https://map.naver.com/p/search/' + encodeURIComponent(place);
+}
+
+var WEEKDAYS_KO = ['일','월','화','수','목','금','토'];
+function pad2(n){ return n < 10 ? '0' + n : '' + n; }
+function toISO(y, m, d){ return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+function todayParts(){
+  var t = new Date();
+  return { y: t.getFullYear(), m: t.getMonth(), d: t.getDate() };
+}
+function parseAnyDate(s){
+  if(!s) return null;
+  var iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if(iso) return { y:+iso[1], m:+iso[2]-1, d:+iso[3] };
+  var legacy = /^(\d{1,2})\/(\d{1,2})$/.exec(s);
+  if(legacy) return { y: todayParts().y, m:+legacy[1]-1, d:+legacy[2] };
+  return null;
+}
+function formatDateDisplay(s){
+  var p = parseAnyDate(s);
+  if(!p) return s;
+  var wd = new Date(p.y, p.m, p.d).getDay();
+  return (p.m + 1) + '월 ' + p.d + '일 (' + WEEKDAYS_KO[wd] + ')';
+}
+function buildCalendarGrid(y, m, selectedISO){
+  var first = new Date(y, m, 1);
+  var startWeekday = first.getDay();
+  var daysInMonth = new Date(y, m + 1, 0).getDate();
+  var t = todayParts();
+  var todayISO = toISO(t.y, t.m, t.d);
+  var cells = '';
+  for(var i = 0; i < startWeekday; i++){ cells += '<span class="cal-cell cal-empty"></span>'; }
+  for(var d = 1; d <= daysInMonth; d++){
+    var iso = toISO(y, m, d);
+    var wd = new Date(y, m, d).getDay();
+    var cls = 'cal-cell cal-day' + (wd===0?' cal-sun':'') + (wd===6?' cal-sat':'') +
+      (iso===todayISO?' cal-today':'') + (iso===selectedISO?' cal-selected':'');
+    cells += '<button type="button" class="' + cls + '" data-action="pick-date" data-date="' + iso + '">' + d + '</button>';
+  }
+  var weekdays = WEEKDAYS_KO.map(function(w, i){
+    return '<span class="cal-wd' + (i===0?' cal-sun':'') + (i===6?' cal-sat':'') + '">' + w + '</span>';
+  }).join('');
+  return (
+    '<div class="calendar">' +
+      '<div class="cal-head">' +
+        '<button type="button" class="cal-nav" data-action="cal-prev" aria-label="이전 달">‹</button>' +
+        '<span class="cal-title">' + y + '년 ' + (m + 1) + '월</span>' +
+        '<button type="button" class="cal-nav" data-action="cal-next" aria-label="다음 달">›</button>' +
+      '</div>' +
+      '<div class="cal-weekdays">' + weekdays + '</div>' +
+      '<div class="cal-grid">' + cells + '</div>' +
+      '<div class="cal-footer"><button type="button" class="cal-cancel" data-action="cancel-field">취소</button></div>' +
+    '</div>'
+  );
+}
+
+var STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+var EDITING = null;
+var CAL_VIEW = null;
+var LOADED = false;      // first Firestore snapshot has arrived
+var CONFIG_OK = !/PASTE_YOUR/.test(FIREBASE_CONFIG.apiKey);
+var AUTH_READY = false;  // anonymous sign-in finished
+var LOAD_ERROR = false;
+var SAVING = false;
+var toastTimer = null;
+
+function formatUpdated(iso){
+  if(!iso) return '';
+  try{
+    var d = new Date(iso);
+    return d.toLocaleString('ko-KR', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  }catch(e){ return ''; }
+}
+
+function canEditNow(){
+  return CONFIG_OK && LOADED && AUTH_READY && !LOAD_ERROR && !SAVING;
+}
+
+function fieldRow(field, label, value, iconSvg, showMap){
+  var editing = EDITING === field;
+  var canEdit = canEditNow();
+  var inner;
+  if(editing){
+    inner =
+      '<div class="field-row">' +
+        '<input class="edit-input" id="edit-input" data-field="' + field + '" value="' + esc(value) + '" maxlength="40">' +
+        '<button type="button" class="icon-btn icon-save" data-action="save-field" data-field="' + field + '" aria-label="저장">' + iconCheck() + '</button>' +
+        '<button type="button" class="icon-btn icon-cancel" data-action="cancel-field" aria-label="취소">' + iconX() + '</button>' +
+      '</div>';
+  } else {
+    inner =
+      '<div class="field-row">' +
+        '<span class="meta-value">' + esc(value) + '</span>' +
+        (showMap && value ? '<a class="edit-btn" href="' + naverMapUrl(value) + '" target="_blank" rel="noopener noreferrer" aria-label="네이버 지도에서 ' + esc(value) + ' 검색" title="네이버 지도에서 검색">' + iconSearch() + '</a>' : '') +
+        (canEdit ? '<button type="button" class="edit-btn" data-action="edit-field" data-field="' + field + '" aria-label="' + label + ' 수정">' + iconPencil() + '</button>' : '') +
+      '</div>';
+  }
+  return (
+    '<div class="meta-row">' +
+      '<span class="meta-icon">' + iconSvg + '</span>' +
+      '<span class="meta-label">' + label + '</span>' +
+      inner +
+    '</div>'
+  );
+}
+
+function titleBlock(){
+  var editing = EDITING === 'title';
+  var canEdit = canEditNow();
+  if(editing){
+    return (
+      '<div class="title-row">' +
+        '<input class="edit-input" id="edit-input" data-field="title" value="' + esc(STATE.title) + '" maxlength="24">' +
+        '<button type="button" class="icon-btn icon-save" data-action="save-field" data-field="title" aria-label="저장">' + iconCheck() + '</button>' +
+        '<button type="button" class="icon-btn icon-cancel" data-action="cancel-field" aria-label="취소">' + iconX() + '</button>' +
+      '</div>'
+    );
+  }
+  return (
+    '<div class="title-row">' +
+      '<h1 class="title">' + esc(STATE.title) + '</h1>' +
+      (canEdit ? '<button type="button" class="edit-btn" data-action="edit-field" data-field="title" aria-label="모임 이름 수정" style="margin-top:6px;">' + iconPencil() + '</button>' : '') +
+    '</div>'
+  );
+}
+
+function rosterRow(a){
+  var canEdit = canEditNow();
+  return (
+    '<li class="roster-row" data-id="' + a.id + '">' +
+      '<span class="name">' + esc(a.name) + '</span>' +
+      '<div class="segmented" role="group" aria-label="' + esc(a.name) + ' 참석 여부">' +
+        '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="yes" class="' + (a.status==='yes'?'active':'') + '" ' + (canEdit?'':'disabled') + '>참석</button>' +
+        '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="pending" class="' + (a.status==='pending'?'active':'') + '" ' + (canEdit?'':'disabled') + '>미정</button>' +
+        '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="no" class="' + (a.status==='no'?'active':'') + '" ' + (canEdit?'':'disabled') + '>불참</button>' +
+      '</div>' +
+      (canEdit ? '<button type="button" class="remove" data-action="remove" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 삭제">×</button>' : '') +
+    '</li>'
+  );
+}
+
+function render(){
+  var yes = STATE.attendees.filter(function(a){return a.status==='yes';}).length;
+  var no = STATE.attendees.filter(function(a){return a.status==='no';}).length;
+  var pending = STATE.attendees.filter(function(a){return a.status==='pending';}).length;
+  var canEdit = canEditNow();
+
+  var banner = '';
+  if(!CONFIG_OK){
+    banner = '<div class="readonly-banner">이 페이지는 아직 Firebase 설정이 안 됐어요. index.html의 FIREBASE_CONFIG 값을 채워주세요.</div>';
+  } else if(LOAD_ERROR){
+    banner = '<div class="readonly-banner">서버에 연결하지 못했어요. 새로고침 해보세요. (계속 안 되면 Firestore 보안 규칙을 확인해주세요)</div>';
+  } else if(!LOADED || !AUTH_READY){
+    banner = '<div class="readonly-banner">불러오는 중…</div>';
+  }
+
+  var budgetHtml =
+    '<div class="budget">' +
+      '<span class="budget-label">예상 참가비</span>' +
+      '<span class="budget-formula">참석 ' + yes + '명 × ' + PER_PERSON_COST.toLocaleString('ko-KR') + '원</span>' +
+      '<span class="budget-total">' + (yes * PER_PERSON_COST).toLocaleString('ko-KR') + '원</span>' +
+    '</div>';
+
+  var rosterHtml = STATE.attendees.length
+    ? '<ul class="roster">' + STATE.attendees.map(rosterRow).join('') + '</ul>'
+    : '<p class="empty">아직 등록된 인원이 없어요. 아래에서 이름을 추가해 보세요.</p>';
+
+  var addFormHtml = canEdit
+    ? '<form class="add-form" id="add-form">' +
+        '<input type="text" id="new-name" placeholder="이름 입력 후 추가" maxlength="20" autocomplete="off">' +
+        '<button type="submit">추가</button>' +
+      '</form>'
+    : '';
+
+  var updatedHtml = STATE.updatedAt
+    ? '<p class="updated">마지막 수정 · ' + esc(formatUpdated(STATE.updatedAt)) + '</p>'
+    : '';
+
+  var dateBlock;
+  if(EDITING === 'date'){
+    var parsedSel = parseAnyDate(STATE.date);
+    var sel = parsedSel ? toISO(parsedSel.y, parsedSel.m, parsedSel.d) : null;
+    dateBlock =
+      '<div class="meta-row meta-row-cal">' +
+        '<span class="meta-icon">' + iconCal() + '</span>' +
+        '<span class="meta-label">일시</span>' +
+        buildCalendarGrid(CAL_VIEW.y, CAL_VIEW.m, sel) +
+      '</div>';
+  } else {
+    dateBlock = fieldRow('date', '일시', formatDateDisplay(STATE.date), iconCal());
+  }
+
+  document.getElementById('app').innerHTML =
+    banner +
+    '<header class="card head">' +
+      '<p class="eyebrow">사내 동호회 공지</p>' +
+      titleBlock() +
+      '<div class="meta">' +
+        dateBlock +
+        fieldRow('place', '장소', STATE.place, iconPin(), true) +
+      '</div>' +
+    '</header>' +
+    '<section class="card attend">' +
+      '<div class="section-head">' +
+        '<h2>참석 체크</h2>' +
+        '<div class="stats">' +
+          '<span class="stat stat-yes">참석 ' + yes + '</span>' +
+          '<span class="stat stat-pending">미정 ' + pending + '</span>' +
+          '<span class="stat stat-no">불참 ' + no + '</span>' +
+          (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
+        '</div>' +
+      '</div>' +
+      budgetHtml +
+      rosterHtml +
+      addFormHtml +
+    '</section>' +
+    updatedHtml;
+
+  if(EDITING){
+    var input = document.getElementById('edit-input');
+    if(input){ input.focus(); input.select(); }
+  }
+}
+
+function showToast(msg){
+  var t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.hidden = false;
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.hidden = true; }, 3200);
+}
+
+// ---------------------------------------------------------------------
+// Firebase 연동
+// ---------------------------------------------------------------------
+var db = null, auth = null, docRef = null;
+
+function persist(mutate){
+  if(!canEditNow()) return;
+  EDITING = null;
+  SAVING = true;
+  render();
+  runTransaction(db, function(tx){
+    return tx.get(docRef).then(function(snap){
+      var data = snap.exists() ? snap.data() : JSON.parse(JSON.stringify(DEFAULT_STATE));
+      data = JSON.parse(JSON.stringify(data));
+      if(!Array.isArray(data.attendees)) data.attendees = [];
+      mutate(data);
+      data.updatedAt = new Date().toISOString();
+      tx.set(docRef, data);
+    });
+  }).then(function(){
+    SAVING = false;
+    // Don't rely on the onSnapshot listener to re-render: whether the
+    // snapshot for this write arrives before or after this handler runs
+    // is not guaranteed, so re-enable the UI here regardless. If the
+    // snapshot lands after, it will simply render again with the
+    // confirmed data.
+    render();
+  }).catch(function(err){
+    console.error(err);
+    SAVING = false;
+    render();
+    showToast('저장하지 못했어요. 다시 시도해 주세요.');
+  });
+}
+
+function handleClick(e){
+  var editBtn = e.target.closest('[data-action="edit-field"]');
+  if(editBtn){
+    var field = editBtn.getAttribute('data-field');
+    EDITING = field;
+    if(field === 'date'){
+      var p = parseAnyDate(STATE.date) || todayParts();
+      CAL_VIEW = { y: p.y, m: p.m };
+    }
+    render();
+    return;
+  }
+  var cancelBtn = e.target.closest('[data-action="cancel-field"]');
+  if(cancelBtn){
+    EDITING = null;
+    render();
+    return;
+  }
+  var saveBtn = e.target.closest('[data-action="save-field"]');
+  if(saveBtn){
+    saveField(saveBtn.getAttribute('data-field'));
+    return;
+  }
+  var prevBtn = e.target.closest('[data-action="cal-prev"]');
+  if(prevBtn){
+    CAL_VIEW.m -= 1;
+    if(CAL_VIEW.m < 0){ CAL_VIEW.m = 11; CAL_VIEW.y -= 1; }
+    render();
+    return;
+  }
+  var nextBtn = e.target.closest('[data-action="cal-next"]');
+  if(nextBtn){
+    CAL_VIEW.m += 1;
+    if(CAL_VIEW.m > 11){ CAL_VIEW.m = 0; CAL_VIEW.y += 1; }
+    render();
+    return;
+  }
+  var pickBtn = e.target.closest('[data-action="pick-date"]');
+  if(pickBtn){
+    var iso = pickBtn.getAttribute('data-date');
+    persist(function(data){ data.date = iso; });
+    return;
+  }
+  var statusBtn = e.target.closest('[data-action="set-status"]');
+  if(statusBtn && !statusBtn.disabled){
+    var id = statusBtn.getAttribute('data-id');
+    var status = statusBtn.getAttribute('data-status');
+    persist(function(data){
+      var a = data.attendees.find(function(x){ return x.id === id; });
+      if(a) a.status = status;
+    });
+    return;
+  }
+  var removeBtn = e.target.closest('[data-action="remove"]');
+  if(removeBtn){
+    var rid = removeBtn.getAttribute('data-id');
+    persist(function(data){
+      data.attendees = data.attendees.filter(function(x){ return x.id !== rid; });
+    });
+    return;
+  }
+}
+
+function saveField(field){
+  var input = document.getElementById('edit-input');
+  if(!input) return;
+  var value = input.value.trim();
+  if(!value){ EDITING = null; render(); return; }
+  persist(function(data){
+    data[field] = value;
+  });
+}
+
+function handleKeydown(e){
+  if(e.target && e.target.id === 'edit-input'){
+    if(e.key === 'Enter'){ e.preventDefault(); saveField(e.target.getAttribute('data-field')); }
+    if(e.key === 'Escape'){ e.preventDefault(); EDITING = null; render(); }
+  }
+}
+
+function handleSubmit(e){
+  if(e.target && e.target.id === 'add-form'){
+    e.preventDefault();
+    var input = document.getElementById('new-name');
+    var name = input.value.trim();
+    if(!name) return;
+    persist(function(data){
+      data.attendees.push({id: uid(), name: name, status: 'pending'});
+    });
+    var again = document.getElementById('new-name');
+    if(again){ again.value = ''; again.focus(); }
+  }
+}
+
+function init(){
+  var app = document.getElementById('app');
+  app.addEventListener('click', handleClick);
+  app.addEventListener('keydown', handleKeydown);
+  app.addEventListener('submit', handleSubmit);
+  render();
+
+  if(!CONFIG_OK) return;
+
+  try{
+    var fbApp = initializeApp(FIREBASE_CONFIG);
+    db = getFirestore(fbApp);
+    auth = getAuth(fbApp);
+    docRef = doc(db, 'clubEvents', EVENT_ID);
+  }catch(e){
+    console.error(e);
+    LOAD_ERROR = true;
+    render();
+    return;
+  }
+
+  onAuthStateChanged(auth, function(user){
+    AUTH_READY = !!user;
+    render();
+  });
+  signInAnonymously(auth).catch(function(err){
+    console.error(err);
+    LOAD_ERROR = true;
+    render();
+  });
+
+  onSnapshot(docRef, function(snap){
+    if(snap.exists()){
+      var data = snap.data();
+      if(!Array.isArray(data.attendees)) data.attendees = [];
+      STATE = data;
+    } else {
+      STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      setDoc(docRef, STATE).catch(function(err){ console.error(err); });
+    }
+    LOADED = true;
+    render();
+  }, function(err){
+    console.error(err);
+    LOAD_ERROR = true;
+    render();
+  });
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
