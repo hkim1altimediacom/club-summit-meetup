@@ -199,12 +199,16 @@ body{
 .cal-wd.cal-sat{color:var(--accent-strong);}
 .cal-grid{gap:2px;}
 .cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;}
-button.cal-day{border:none;background:transparent;color:var(--ink);cursor:pointer;border-radius:8px;font-variant-numeric:tabular-nums;}
+button.cal-day{border:none;background:transparent;color:var(--ink);cursor:pointer;border-radius:8px;font-variant-numeric:tabular-nums;flex-direction:column;gap:2px;}
 button.cal-day:hover{background:var(--surface);}
 button.cal-day.cal-sun{color:var(--decline);}
 button.cal-day.cal-sat{color:var(--accent-strong);}
+button.cal-day.cal-holiday{color:var(--decline);}
 button.cal-day.cal-today{box-shadow:inset 0 0 0 1px var(--border);font-weight:700;}
 button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:none;}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:currentColor;flex:none;}
+.cal-legend{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-faint);padding:8px 2px 0;}
+.cal-legend .cal-dot{background:var(--decline);}
 .cal-footer{display:flex;justify-content:flex-end;margin-top:6px;}
 .cal-cancel{border:none;background:transparent;color:var(--ink-faint);font-size:12px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:8px;}
 .cal-cancel:hover{background:var(--surface);color:var(--ink);}
@@ -400,6 +404,13 @@ button:disabled,input:disabled,select:disabled{opacity:.5;cursor:not-allowed;}
   max-width:58%;
 }
 .pref-hint{font-size:13px;color:var(--ink-faint);text-align:center;padding:4px 0 0;margin:0;}
+.admin-row{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
+.admin-badge{font-size:11px;font-weight:700;color:var(--attend);background:var(--attend-bg);padding:5px 10px;border-radius:999px;flex:none;}
+.admin-btn{border:1px solid var(--border);background:var(--surface-2);color:var(--ink-muted);font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;cursor:pointer;flex:none;}
+.admin-btn:hover{color:var(--accent-strong);border-color:var(--accent);}
+.section-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto;}
+.reset-btn{border:1px solid var(--border);background:transparent;color:var(--ink-faint);font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;flex:none;white-space:nowrap;}
+.reset-btn:hover{color:var(--decline);border-color:var(--decline);}
 @media (prefers-reduced-motion:no-preference){
   .roster-row,.card,.poll-row{transition:background .15s ease;}
 }
@@ -440,6 +451,62 @@ const FIREBASE_CONFIG = {
 const EVENT_ID = "summit-2026-09-22";
 
 const PER_PERSON_COST = 50000;
+
+// 운영자 전용 PIN. 참석자/투표 후보 삭제, 각 섹션 초기화에 사용됩니다.
+// 필요하면 이 값만 바꿔서 다시 배포하세요. 이 페이지는 공개 정적 페이지라
+// 페이지 소스를 보면 이 값이 그대로 노출됩니다 — 실수로 삭제/초기화하는
+// 것을 막는 용도이지, 진짜 보안(비공개)은 아니라는 점을 참고해주세요.
+const ADMIN_PIN = "1234";
+
+// 대한민국 공휴일 (날짜 후보 캘린더에 표시). 2026년 값은 정부 발표 기준으로
+// 확인했고, 2027년 값은 월력요항 기준 예상치라 임시공휴일 등이 추가로
+// 지정되면 달라질 수 있어요.
+const HOLIDAYS_KO = {
+  "2026-01-01": "신정",
+  "2026-02-16": "설날 연휴",
+  "2026-02-17": "설날",
+  "2026-02-18": "설날 연휴",
+  "2026-03-01": "삼일절",
+  "2026-03-02": "대체공휴일(삼일절)",
+  "2026-05-01": "근로자의날",
+  "2026-05-05": "어린이날",
+  "2026-05-24": "부처님오신날",
+  "2026-05-25": "대체공휴일(부처님오신날)",
+  "2026-06-03": "임시공휴일(전국동시지방선거)",
+  "2026-06-06": "현충일",
+  "2026-07-17": "제헌절",
+  "2026-08-15": "광복절",
+  "2026-08-17": "대체공휴일(광복절)",
+  "2026-09-24": "추석 연휴",
+  "2026-09-25": "추석",
+  "2026-09-26": "추석 연휴",
+  "2026-10-03": "개천절",
+  "2026-10-05": "대체공휴일(개천절)",
+  "2026-10-09": "한글날",
+  "2026-12-25": "크리스마스",
+  "2027-01-01": "신정",
+  "2027-02-06": "설날 연휴",
+  "2027-02-07": "설날",
+  "2027-02-08": "설날 연휴",
+  "2027-02-09": "대체공휴일(설날)",
+  "2027-03-01": "삼일절",
+  "2027-05-01": "근로자의날",
+  "2027-05-05": "어린이날",
+  "2027-05-13": "부처님오신날",
+  "2027-06-06": "현충일",
+  "2027-07-17": "제헌절",
+  "2027-07-19": "대체공휴일(제헌절)",
+  "2027-08-15": "광복절",
+  "2027-08-16": "대체공휴일(광복절)",
+  "2027-09-14": "추석 연휴",
+  "2027-09-15": "추석",
+  "2027-09-16": "추석 연휴",
+  "2027-10-03": "개천절",
+  "2027-10-04": "대체공휴일(개천절)",
+  "2027-10-09": "한글날",
+  "2027-10-11": "대체공휴일(한글날)",
+  "2027-12-25": "크리스마스"
+};
 
 const DEFAULT_STATE = {
   title: "정상회담",
@@ -525,12 +592,17 @@ function buildCalendarGrid(y, m, selectedISO){
   var todayISO = toISO(t.y, t.m, t.d);
   var cells = '';
   for(var i = 0; i < startWeekday; i++){ cells += '<span class="cal-cell cal-empty"></span>'; }
+  var hasHolidayThisMonth = false;
   for(var d = 1; d <= daysInMonth; d++){
     var iso = toISO(y, m, d);
     var wd = new Date(y, m, d).getDay();
-    var cls = 'cal-cell cal-day' + (wd===0?' cal-sun':'') + (wd===6?' cal-sat':'') +
+    var holidayName = HOLIDAYS_KO[iso] || null;
+    if(holidayName) hasHolidayThisMonth = true;
+    var cls = 'cal-cell cal-day' + (wd===0?' cal-sun':'') + (wd===6?' cal-sat':'') + (holidayName?' cal-holiday':'') +
       (iso===todayISO?' cal-today':'') + (iso===selectedISO?' cal-selected':'');
-    cells += '<button type="button" class="' + cls + '" data-action="pick-date-option" data-date="' + iso + '">' + d + '</button>';
+    cells += '<button type="button" class="' + cls + '" data-action="pick-date-option" data-date="' + iso + '"' +
+      (holidayName ? ' title="' + esc(holidayName) + '"' : '') + '>' + d +
+      (holidayName ? '<i class="cal-dot" aria-hidden="true"></i>' : '') + '</button>';
   }
   var weekdays = WEEKDAYS_KO.map(function(w, i){
     return '<span class="cal-wd' + (i===0?' cal-sun':'') + (i===6?' cal-sat':'') + '">' + w + '</span>';
@@ -544,6 +616,7 @@ function buildCalendarGrid(y, m, selectedISO){
       '</div>' +
       '<div class="cal-weekdays">' + weekdays + '</div>' +
       '<div class="cal-grid">' + cells + '</div>' +
+      (hasHolidayThisMonth ? '<div class="cal-legend"><i class="cal-dot" aria-hidden="true"></i><span>공휴일 (길게 보려면 날짜에 마우스를 올려보세요)</span></div>' : '') +
       '<div class="cal-footer"><button type="button" class="cal-cancel" data-action="cancel-field">취소</button></div>' +
     '</div>'
   );
@@ -586,6 +659,8 @@ var AUTH_READY = false;  // anonymous sign-in finished
 var LOAD_ERROR = false;
 var SAVING = false;
 var toastTimer = null;
+var IS_ADMIN = false;
+try { IS_ADMIN = localStorage.getItem('clubAdminUnlocked') === '1'; } catch(e){}
 
 function formatUpdated(iso){
   if(!iso) return '';
@@ -597,6 +672,20 @@ function formatUpdated(iso){
 
 function canEditNow(){
   return CONFIG_OK && LOADED && AUTH_READY && !LOAD_ERROR && !SAVING;
+}
+
+function isAdminNow(){
+  return canEditNow() && IS_ADMIN;
+}
+
+function adminRow(){
+  return (
+    '<div class="admin-row">' +
+      (IS_ADMIN
+        ? '<span class="admin-badge">🔓 관리자 모드</span><button type="button" class="admin-btn" data-action="admin-lock">잠그기</button>'
+        : '<button type="button" class="admin-btn" data-action="admin-unlock">🔒 관리자 모드 켜기</button>') +
+    '</div>'
+  );
 }
 
 function titleBlock(){
@@ -631,6 +720,7 @@ function summaryRow(iconSvg, label, text){
 
 function rosterRow(a){
   var canEdit = canEditNow();
+  var isAdmin = isAdminNow();
   return (
     '<li class="roster-row" data-id="' + a.id + '">' +
       '<span class="name">' + esc(a.name) + '</span>' +
@@ -640,7 +730,7 @@ function rosterRow(a){
         '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="pending" class="' + (a.status==='pending'?'active':'') + '" ' + (canEdit?'':'disabled') + '>미정</button>' +
         '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="no" class="' + (a.status==='no'?'active':'') + '" ' + (canEdit?'':'disabled') + '>불참</button>' +
       '</div>' +
-      (canEdit ? '<button type="button" class="remove" data-action="remove" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 삭제">×</button>' : '') +
+      (isAdmin ? '<button type="button" class="remove" data-action="remove" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 삭제">×</button>' : '') +
     '</li>'
   );
 }
@@ -667,6 +757,7 @@ function render(){
   var pending = STATE.attendees.filter(function(a){return a.status==='pending';}).length;
   var novote = STATE.attendees.filter(function(a){return !a.status;}).length;
   var canEdit = canEditNow();
+  var isAdmin = isAdminNow();
 
   var banner = '';
   if(!CONFIG_OK){
@@ -729,7 +820,7 @@ function render(){
           '<li class="poll-row' + (isLead?' poll-lead':'') + '">' +
             '<span class="poll-main">' + (isLead?'<span class="poll-crown">1위</span>':'') + '<span>' + esc(formatDateDisplay(o.date)) + '</span></span>' +
             '<span class="poll-badge">' + count + '표</span>' +
-            (canEdit ? '<button type="button" class="remove" data-action="remove-date-option" data-id="' + o.id + '" aria-label="' + esc(formatDateDisplay(o.date)) + ' 후보 삭제">×</button>' : '') +
+            (isAdmin ? '<button type="button" class="remove" data-action="remove-date-option" data-id="' + o.id + '" aria-label="' + esc(formatDateDisplay(o.date)) + ' 후보 삭제">×</button>' : '') +
           '</li>'
         );
       }).join('') + '</ul>'
@@ -761,7 +852,7 @@ function render(){
             '<span class="poll-main">' + (isLead?'<span class="poll-crown">1위</span>':'') + '<span class="poll-place-text">' + esc(o.place) + '</span></span>' +
             '<a class="edit-btn" href="' + naverMapUrl(o.place) + '" target="_blank" rel="noopener noreferrer" aria-label="네이버 지도에서 ' + esc(o.place) + ' 검색" title="네이버 지도에서 검색">' + iconSearch() + '</a>' +
             '<span class="poll-badge">' + count + '표</span>' +
-            (canEdit ? '<button type="button" class="remove" data-action="remove-place-option" data-id="' + o.id + '" aria-label="' + esc(o.place) + ' 후보 삭제">×</button>' : '') +
+            (isAdmin ? '<button type="button" class="remove" data-action="remove-place-option" data-id="' + o.id + '" aria-label="' + esc(o.place) + ' 후보 삭제">×</button>' : '') +
           '</li>'
         );
       }).join('') + '</ul>'
@@ -791,16 +882,20 @@ function render(){
         summaryRow(iconCal(), '날짜', dateSummaryText) +
         summaryRow(iconPin(), '장소', placeSummaryText) +
       '</div>' +
+      adminRow() +
     '</header>' +
     '<section class="card attend">' +
       '<div class="section-head">' +
         '<h2>참석 체크</h2>' +
-        '<div class="stats">' +
-          '<span class="stat stat-yes">참석 ' + yes + '</span>' +
-          '<span class="stat stat-pending">미정 ' + pending + '</span>' +
-          '<span class="stat stat-no">불참 ' + no + '</span>' +
-          '<span class="stat stat-novote">미투표 ' + novote + '</span>' +
-          (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
+        '<div class="section-actions">' +
+          '<div class="stats">' +
+            '<span class="stat stat-yes">참석 ' + yes + '</span>' +
+            '<span class="stat stat-pending">미정 ' + pending + '</span>' +
+            '<span class="stat stat-no">불참 ' + no + '</span>' +
+            '<span class="stat stat-novote">미투표 ' + novote + '</span>' +
+            (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
+          '</div>' +
+          (isAdmin ? '<button type="button" class="reset-btn" data-action="reset-attend">참석 초기화</button>' : '') +
         '</div>' +
       '</div>' +
       budgetHtml +
@@ -811,6 +906,7 @@ function render(){
     '<section class="card">' +
       '<div class="section-head">' +
         '<h2>날짜 투표</h2>' +
+        (isAdmin ? '<div class="section-actions"><button type="button" class="reset-btn" data-action="reset-date">투표 초기화</button></div>' : '') +
       '</div>' +
       dateOptionsHtml +
       addDateHtml +
@@ -819,6 +915,7 @@ function render(){
     '<section class="card">' +
       '<div class="section-head">' +
         '<h2>장소 투표</h2>' +
+        (isAdmin ? '<div class="section-actions"><button type="button" class="reset-btn" data-action="reset-place">투표 초기화</button></div>' : '') +
       '</div>' +
       placeOptionsHtml +
       addPlaceHtml +
@@ -943,7 +1040,9 @@ function handleClick(e){
   }
   var removeBtn = e.target.closest('[data-action="remove"]');
   if(removeBtn){
+    if(!isAdminNow()) return;
     var rid = removeBtn.getAttribute('data-id');
+    if(!window.confirm('이 인원을 명단에서 삭제할까요?')) return;
     persist(function(data){
       data.attendees = data.attendees.filter(function(x){ return x.id !== rid; });
     });
@@ -951,7 +1050,9 @@ function handleClick(e){
   }
   var removeDateOpt = e.target.closest('[data-action="remove-date-option"]');
   if(removeDateOpt){
+    if(!isAdminNow()) return;
     var doid = removeDateOpt.getAttribute('data-id');
+    if(!window.confirm('이 날짜 후보를 삭제할까요? 이 후보에 투표한 사람은 미투표로 바뀌어요.')) return;
     persist(function(data){
       data.dateOptions = data.dateOptions.filter(function(o){ return o.id !== doid; });
       data.attendees.forEach(function(a){ if(a.datePick === doid) a.datePick = null; });
@@ -960,11 +1061,62 @@ function handleClick(e){
   }
   var removePlaceOpt = e.target.closest('[data-action="remove-place-option"]');
   if(removePlaceOpt){
+    if(!isAdminNow()) return;
     var poid = removePlaceOpt.getAttribute('data-id');
+    if(!window.confirm('이 장소 후보를 삭제할까요? 이 후보에 투표한 사람은 미투표로 바뀌어요.')) return;
     persist(function(data){
       data.placeOptions = data.placeOptions.filter(function(o){ return o.id !== poid; });
       data.attendees.forEach(function(a){ if(a.placePick === poid) a.placePick = null; });
     });
+    return;
+  }
+  var resetAttendBtn = e.target.closest('[data-action="reset-attend"]');
+  if(resetAttendBtn){
+    if(!isAdminNow()) return;
+    if(!window.confirm('모든 인원의 참석 여부를 미투표 상태로 초기화할까요? (명단은 유지돼요)')) return;
+    persist(function(data){
+      data.attendees.forEach(function(a){ a.status = null; });
+    });
+    return;
+  }
+  var resetDateBtn = e.target.closest('[data-action="reset-date"]');
+  if(resetDateBtn){
+    if(!isAdminNow()) return;
+    if(!window.confirm('모든 인원의 날짜 투표를 초기화할까요? (후보 목록은 유지돼요)')) return;
+    persist(function(data){
+      data.attendees.forEach(function(a){ a.datePick = null; });
+    });
+    return;
+  }
+  var resetPlaceBtn = e.target.closest('[data-action="reset-place"]');
+  if(resetPlaceBtn){
+    if(!isAdminNow()) return;
+    if(!window.confirm('모든 인원의 장소 투표를 초기화할까요? (후보 목록은 유지돼요)')) return;
+    persist(function(data){
+      data.attendees.forEach(function(a){ a.placePick = null; });
+    });
+    return;
+  }
+  var adminUnlockBtn = e.target.closest('[data-action="admin-unlock"]');
+  if(adminUnlockBtn){
+    var pin = window.prompt('관리자 PIN을 입력하세요');
+    if(pin === null) return;
+    if(pin === ADMIN_PIN){
+      IS_ADMIN = true;
+      try{ localStorage.setItem('clubAdminUnlocked', '1'); }catch(e){}
+      showToast('관리자 모드가 켜졌어요.');
+      render();
+    } else {
+      showToast('PIN이 올바르지 않아요.');
+    }
+    return;
+  }
+  var adminLockBtn = e.target.closest('[data-action="admin-lock"]');
+  if(adminLockBtn){
+    IS_ADMIN = false;
+    try{ localStorage.removeItem('clubAdminUnlocked'); }catch(e){}
+    showToast('관리자 모드를 껐어요.');
+    render();
     return;
   }
   var copyBtn = e.target.closest('[data-action="copy-novote"]');
