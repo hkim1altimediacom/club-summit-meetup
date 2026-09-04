@@ -163,7 +163,7 @@ body{
   text-decoration:none;
 }
 .edit-btn:hover{background:var(--surface-2);color:var(--accent-strong);}
-.edit-btn:focus-visible,button:focus-visible,input:focus-visible{outline:none;box-shadow:var(--focus);}
+.edit-btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:none;box-shadow:var(--focus);}
 .edit-btn svg{width:15px;height:15px;}
 .edit-input{
   flex:1;
@@ -188,7 +188,7 @@ body{
 .icon-btn svg{width:16px;height:16px;}
 .icon-save{background:var(--attend);color:#fff;}
 .icon-cancel{background:var(--surface-2);color:var(--ink-muted);}
-.calendar{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px;flex:1;}
+.calendar{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px;}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .cal-title{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
 .cal-nav{border:none;background:var(--surface);color:var(--ink-muted);width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
@@ -210,6 +210,7 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
 .cal-cancel:hover{background:var(--surface);color:var(--ink);}
 .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
 .section-head h2{font-size:18px;margin:0;font-weight:700;}
+.section-sub{font-size:12px;color:var(--ink-faint);margin:-8px 0 14px;}
 .stats{display:flex;gap:6px;flex-wrap:wrap;}
 .stat{
   font-size:12px;
@@ -221,6 +222,7 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
 .stat-yes{background:var(--attend-bg);color:var(--attend);}
 .stat-pending{background:var(--pending-bg);color:var(--pending);}
 .stat-no{background:var(--decline-bg);color:var(--decline);}
+.stat-novote{background:var(--surface-2);color:var(--ink-faint);border:1px solid var(--border);}
 .stat-saving{background:var(--surface);color:var(--ink-faint);border:1px solid var(--border);}
 .budget{
   display:flex;
@@ -238,6 +240,30 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
 .budget-label{font-weight:700;color:var(--ink-muted);flex:none;}
 .budget-formula{color:var(--ink-faint);flex:1;min-width:120px;font-variant-numeric:tabular-nums;}
 .budget-total{font-weight:800;font-size:15px;color:var(--accent-strong);font-variant-numeric:tabular-nums;flex:none;}
+.callout{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--pending-bg);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 14px;
+  margin-bottom:14px;
+  font-size:13px;
+  color:var(--ink-muted);
+}
+.callout b{color:var(--ink);font-weight:700;}
+.callout-btn{
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--ink-muted);
+  font-size:12px;font-weight:700;
+  padding:6px 12px;border-radius:8px;cursor:pointer;flex:none;
+}
+.callout-btn:hover{color:var(--accent-strong);border-color:var(--accent);}
+.novote-tag{
+  font-size:11px;font-weight:700;color:var(--ink-faint);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:999px;padding:3px 8px;flex:none;
+}
 .roster{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
 .roster-row{
   display:flex;align-items:center;gap:10px;
@@ -312,7 +338,7 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
   flex:none;
 }
 .add-form button:hover{background:var(--accent-strong);}
-button:disabled,input:disabled{opacity:.5;cursor:not-allowed;}
+button:disabled,input:disabled,select:disabled{opacity:.5;cursor:not-allowed;}
 .updated{
   text-align:center;
   font-size:12px;
@@ -334,8 +360,48 @@ button:disabled,input:disabled{opacity:.5;cursor:not-allowed;}
   text-align:center;
   z-index:10;
 }
+.poll-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px;}
+.poll-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 10px 10px 14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--surface-2);
+}
+.poll-row.poll-lead{border-color:var(--accent);}
+.poll-main{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;overflow:hidden;}
+.poll-place-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.poll-crown{
+  font-size:10px;font-weight:800;flex:none;
+  background:var(--accent);color:var(--accent-ink);
+  border-radius:999px;padding:2px 7px;
+}
+.poll-badge{
+  font-size:12px;font-weight:700;
+  padding:4px 10px;border-radius:999px;
+  background:var(--surface);color:var(--ink-muted);
+  border:1px solid var(--border);
+  flex:none;font-variant-numeric:tabular-nums;
+}
+.poll-row.poll-lead .poll-badge{background:var(--attend);color:#fff;border-color:transparent;}
+.poll-empty{font-size:13px;color:var(--ink-faint);margin:0 0 12px;}
+.poll-add-btn{
+  border:1px dashed var(--border);background:transparent;color:var(--ink-muted);
+  font-size:13px;font-weight:700;padding:11px;border-radius:12px;cursor:pointer;
+  width:100%;margin-bottom:14px;
+}
+.poll-add-btn:hover{border-color:var(--accent);color:var(--accent-strong);}
+.pref-select{
+  flex:none;
+  font:inherit;font-size:13px;font-weight:600;
+  padding:7px 10px;border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--surface);color:var(--ink);
+  max-width:58%;
+}
+.pref-hint{font-size:13px;color:var(--ink-faint);text-align:center;padding:4px 0 0;margin:0;}
 @media (prefers-reduced-motion:no-preference){
-  .roster-row,.card{transition:background .15s ease;}
+  .roster-row,.card,.poll-row{transition:background .15s ease;}
 }
 </style>
 </head>
@@ -377,21 +443,25 @@ const PER_PERSON_COST = 50000;
 
 const DEFAULT_STATE = {
   title: "정상회담",
-  date: "2026-09-22",
-  place: "육각고기",
+  dateOptions: [
+    {id:"d01", date:"2026-09-22"}
+  ],
+  placeOptions: [
+    {id:"p01", place:"육각고기"}
+  ],
   attendees: [
-    {id:"m01", name:"김환", status:"yes"},
-    {id:"m02", name:"엄태인", status:"yes"},
-    {id:"m03", name:"유재형", status:"yes"},
-    {id:"m04", name:"이상현", status:"yes"},
-    {id:"m05", name:"이효성", status:"yes"},
-    {id:"m06", name:"임태영", status:"pending"},
-    {id:"m07", name:"장재성", status:"pending"},
-    {id:"m08", name:"최재영", status:"pending"},
-    {id:"m09", name:"최정", status:"pending"},
-    {id:"m10", name:"홍원일", status:"pending"},
-    {id:"m11", name:"이정희", status:"pending"},
-    {id:"m12", name:"임수철", status:"pending"}
+    {id:"m01", name:"김환", status:"yes", datePick:null, placePick:null},
+    {id:"m02", name:"엄태인", status:"yes", datePick:null, placePick:null},
+    {id:"m03", name:"유재형", status:"yes", datePick:null, placePick:null},
+    {id:"m04", name:"이상현", status:"yes", datePick:null, placePick:null},
+    {id:"m05", name:"이효성", status:"yes", datePick:null, placePick:null},
+    {id:"m06", name:"임태영", status:"pending", datePick:null, placePick:null},
+    {id:"m07", name:"장재성", status:"pending", datePick:null, placePick:null},
+    {id:"m08", name:"최재영", status:"pending", datePick:null, placePick:null},
+    {id:"m09", name:"최정", status:"pending", datePick:null, placePick:null},
+    {id:"m10", name:"홍원일", status:"pending", datePick:null, placePick:null},
+    {id:"m11", name:"이정희", status:"pending", datePick:null, placePick:null},
+    {id:"m12", name:"임수철", status:"pending", datePick:null, placePick:null}
   ],
   updatedAt: null
 };
@@ -460,7 +530,7 @@ function buildCalendarGrid(y, m, selectedISO){
     var wd = new Date(y, m, d).getDay();
     var cls = 'cal-cell cal-day' + (wd===0?' cal-sun':'') + (wd===6?' cal-sat':'') +
       (iso===todayISO?' cal-today':'') + (iso===selectedISO?' cal-selected':'');
-    cells += '<button type="button" class="' + cls + '" data-action="pick-date" data-date="' + iso + '">' + d + '</button>';
+    cells += '<button type="button" class="' + cls + '" data-action="pick-date-option" data-date="' + iso + '">' + d + '</button>';
   }
   var weekdays = WEEKDAYS_KO.map(function(w, i){
     return '<span class="cal-wd' + (i===0?' cal-sun':'') + (i===6?' cal-sat':'') + '">' + w + '</span>';
@@ -479,8 +549,36 @@ function buildCalendarGrid(y, m, selectedISO){
   );
 }
 
+function migrateState(data){
+  if(!Array.isArray(data.attendees)) data.attendees = [];
+  if(!Array.isArray(data.dateOptions) || !data.dateOptions.length){
+    data.dateOptions = data.date ? [{id:'d-legacy', date: data.date}] : [];
+  }
+  if(!Array.isArray(data.placeOptions) || !data.placeOptions.length){
+    data.placeOptions = data.place ? [{id:'p-legacy', place: data.place}] : [];
+  }
+  delete data.date;
+  delete data.place;
+  data.attendees.forEach(function(a){
+    if(a.datePick === undefined) a.datePick = null;
+    if(a.placePick === undefined) a.placePick = null;
+    if(a.status === undefined) a.status = null;
+  });
+  return data;
+}
+
+function computeLead(options, attendees, pickField){
+  if(!options.length) return { leaders: [], count: 0 };
+  var counts = options.map(function(o){
+    return { opt:o, count: attendees.filter(function(a){ return a[pickField] === o.id; }).length };
+  });
+  var max = Math.max.apply(null, counts.map(function(c){ return c.count; }));
+  if(max === 0) return { leaders: [], count: 0 };
+  return { leaders: counts.filter(function(c){ return c.count === max; }).map(function(c){ return c.opt; }), count: max };
+}
+
 var STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
-var EDITING = null;
+var EDITING = null;      // 'title' | 'add-date' | null
 var CAL_VIEW = null;
 var LOADED = false;      // first Firestore snapshot has arrived
 var CONFIG_OK = !/PASTE_YOUR/.test(FIREBASE_CONFIG.apiKey);
@@ -499,34 +597,6 @@ function formatUpdated(iso){
 
 function canEditNow(){
   return CONFIG_OK && LOADED && AUTH_READY && !LOAD_ERROR && !SAVING;
-}
-
-function fieldRow(field, label, value, iconSvg, showMap){
-  var editing = EDITING === field;
-  var canEdit = canEditNow();
-  var inner;
-  if(editing){
-    inner =
-      '<div class="field-row">' +
-        '<input class="edit-input" id="edit-input" data-field="' + field + '" value="' + esc(value) + '" maxlength="40">' +
-        '<button type="button" class="icon-btn icon-save" data-action="save-field" data-field="' + field + '" aria-label="저장">' + iconCheck() + '</button>' +
-        '<button type="button" class="icon-btn icon-cancel" data-action="cancel-field" aria-label="취소">' + iconX() + '</button>' +
-      '</div>';
-  } else {
-    inner =
-      '<div class="field-row">' +
-        '<span class="meta-value">' + esc(value) + '</span>' +
-        (showMap && value ? '<a class="edit-btn" href="' + naverMapUrl(value) + '" target="_blank" rel="noopener noreferrer" aria-label="네이버 지도에서 ' + esc(value) + ' 검색" title="네이버 지도에서 검색">' + iconSearch() + '</a>' : '') +
-        (canEdit ? '<button type="button" class="edit-btn" data-action="edit-field" data-field="' + field + '" aria-label="' + label + ' 수정">' + iconPencil() + '</button>' : '') +
-      '</div>';
-  }
-  return (
-    '<div class="meta-row">' +
-      '<span class="meta-icon">' + iconSvg + '</span>' +
-      '<span class="meta-label">' + label + '</span>' +
-      inner +
-    '</div>'
-  );
 }
 
 function titleBlock(){
@@ -549,11 +619,22 @@ function titleBlock(){
   );
 }
 
+function summaryRow(iconSvg, label, text){
+  return (
+    '<div class="meta-row">' +
+      '<span class="meta-icon">' + iconSvg + '</span>' +
+      '<span class="meta-label">' + label + '</span>' +
+      '<span class="meta-value">' + text + '</span>' +
+    '</div>'
+  );
+}
+
 function rosterRow(a){
   var canEdit = canEditNow();
   return (
     '<li class="roster-row" data-id="' + a.id + '">' +
       '<span class="name">' + esc(a.name) + '</span>' +
+      (!a.status ? '<span class="novote-tag">미투표</span>' : '') +
       '<div class="segmented" role="group" aria-label="' + esc(a.name) + ' 참석 여부">' +
         '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="yes" class="' + (a.status==='yes'?'active':'') + '" ' + (canEdit?'':'disabled') + '>참석</button>' +
         '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="pending" class="' + (a.status==='pending'?'active':'') + '" ' + (canEdit?'':'disabled') + '>미정</button>' +
@@ -564,10 +645,27 @@ function rosterRow(a){
   );
 }
 
+function dateSelect(a){
+  var canEdit = canEditNow();
+  var opts = '<option value="">미투표</option>' + STATE.dateOptions.map(function(o){
+    return '<option value="' + o.id + '"' + (a.datePick===o.id?' selected':'') + '>' + esc(formatDateDisplay(o.date)) + '</option>';
+  }).join('');
+  return '<select class="pref-select" data-action="pick-date-pref" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 날짜 선호" ' + (canEdit?'':'disabled') + '>' + opts + '</select>';
+}
+
+function placeSelect(a){
+  var canEdit = canEditNow();
+  var opts = '<option value="">미투표</option>' + STATE.placeOptions.map(function(o){
+    return '<option value="' + o.id + '"' + (a.placePick===o.id?' selected':'') + '>' + esc(o.place) + '</option>';
+  }).join('');
+  return '<select class="pref-select" data-action="pick-place-pref" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 장소 선호" ' + (canEdit?'':'disabled') + '>' + opts + '</select>';
+}
+
 function render(){
   var yes = STATE.attendees.filter(function(a){return a.status==='yes';}).length;
   var no = STATE.attendees.filter(function(a){return a.status==='no';}).length;
   var pending = STATE.attendees.filter(function(a){return a.status==='pending';}).length;
+  var novote = STATE.attendees.filter(function(a){return !a.status;}).length;
   var canEdit = canEditNow();
 
   var banner = '';
@@ -579,12 +677,33 @@ function render(){
     banner = '<div class="readonly-banner">불러오는 중…</div>';
   }
 
+  var dateLead = computeLead(STATE.dateOptions, STATE.attendees, 'datePick');
+  var placeLead = computeLead(STATE.placeOptions, STATE.attendees, 'placePick');
+
+  var dateSummaryText = !STATE.dateOptions.length
+    ? '아직 후보 없음'
+    : (dateLead.count === 0
+        ? '아직 투표 없음'
+        : esc(dateLead.leaders.map(function(o){ return formatDateDisplay(o.date); }).join(' / ')) + ' · ' + dateLead.count + '표');
+  var placeSummaryText = !STATE.placeOptions.length
+    ? '아직 후보 없음'
+    : (placeLead.count === 0
+        ? '아직 투표 없음'
+        : esc(placeLead.leaders.map(function(o){ return o.place; }).join(' / ')) + ' · ' + placeLead.count + '표');
+
   var budgetHtml =
     '<div class="budget">' +
       '<span class="budget-label">예상 참가비</span>' +
       '<span class="budget-formula">참석 ' + yes + '명 × ' + PER_PERSON_COST.toLocaleString('ko-KR') + '원</span>' +
       '<span class="budget-total">' + (yes * PER_PERSON_COST).toLocaleString('ko-KR') + '원</span>' +
     '</div>';
+
+  var novoteNames = STATE.attendees.filter(function(a){return !a.status;}).map(function(a){return a.name;});
+  var novoteCallout = novoteNames.length
+    ? '<div class="callout"><span>아직 참석 여부를 체크 안 한 사람: <b>' + esc(novoteNames.join(', ')) + '</b></span>' +
+        (canEdit ? '<button type="button" class="callout-btn" data-action="copy-novote">복사</button>' : '') +
+      '</div>'
+    : '';
 
   var rosterHtml = STATE.attendees.length
     ? '<ul class="roster">' + STATE.attendees.map(rosterRow).join('') + '</ul>'
@@ -601,19 +720,67 @@ function render(){
     ? '<p class="updated">마지막 수정 · ' + esc(formatUpdated(STATE.updatedAt)) + '</p>'
     : '';
 
-  var dateBlock;
-  if(EDITING === 'date'){
-    var parsedSel = parseAnyDate(STATE.date);
-    var sel = parsedSel ? toISO(parsedSel.y, parsedSel.m, parsedSel.d) : null;
-    dateBlock =
-      '<div class="meta-row meta-row-cal">' +
-        '<span class="meta-icon">' + iconCal() + '</span>' +
-        '<span class="meta-label">일시</span>' +
-        buildCalendarGrid(CAL_VIEW.y, CAL_VIEW.m, sel) +
-      '</div>';
+  // ---- 날짜 투표 카드 ----
+  var dateOptionsHtml = STATE.dateOptions.length
+    ? '<ul class="poll-list">' + STATE.dateOptions.map(function(o){
+        var count = STATE.attendees.filter(function(a){return a.datePick===o.id;}).length;
+        var isLead = dateLead.count > 0 && dateLead.leaders.some(function(l){return l.id===o.id;});
+        return (
+          '<li class="poll-row' + (isLead?' poll-lead':'') + '">' +
+            '<span class="poll-main">' + (isLead?'<span class="poll-crown">1위</span>':'') + '<span>' + esc(formatDateDisplay(o.date)) + '</span></span>' +
+            '<span class="poll-badge">' + count + '표</span>' +
+            (canEdit ? '<button type="button" class="remove" data-action="remove-date-option" data-id="' + o.id + '" aria-label="' + esc(formatDateDisplay(o.date)) + ' 후보 삭제">×</button>' : '') +
+          '</li>'
+        );
+      }).join('') + '</ul>'
+    : '<p class="poll-empty">아직 등록된 날짜 후보가 없어요. 아래에서 추가해 보세요.</p>';
+
+  var addDateHtml;
+  if(EDITING === 'add-date'){
+    var selIso = null;
+    addDateHtml = buildCalendarGrid(CAL_VIEW.y, CAL_VIEW.m, selIso);
   } else {
-    dateBlock = fieldRow('date', '일시', formatDateDisplay(STATE.date), iconCal());
+    addDateHtml = canEdit ? '<button type="button" class="poll-add-btn" data-action="add-date-toggle">+ 날짜 후보 추가</button>' : '';
   }
+
+  var datePersonHtml = STATE.dateOptions.length
+    ? (STATE.attendees.length
+        ? '<ul class="roster">' + STATE.attendees.map(function(a){
+            return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' + dateSelect(a) + '</li>';
+          }).join('') + '</ul>'
+        : '<p class="empty">참석 체크에 이름을 먼저 추가해주세요.</p>')
+    : '<p class="pref-hint">후보 날짜를 추가하면 여기서 투표할 수 있어요.</p>';
+
+  // ---- 장소 투표 카드 ----
+  var placeOptionsHtml = STATE.placeOptions.length
+    ? '<ul class="poll-list">' + STATE.placeOptions.map(function(o){
+        var count = STATE.attendees.filter(function(a){return a.placePick===o.id;}).length;
+        var isLead = placeLead.count > 0 && placeLead.leaders.some(function(l){return l.id===o.id;});
+        return (
+          '<li class="poll-row' + (isLead?' poll-lead':'') + '">' +
+            '<span class="poll-main">' + (isLead?'<span class="poll-crown">1위</span>':'') + '<span class="poll-place-text">' + esc(o.place) + '</span></span>' +
+            '<a class="edit-btn" href="' + naverMapUrl(o.place) + '" target="_blank" rel="noopener noreferrer" aria-label="네이버 지도에서 ' + esc(o.place) + ' 검색" title="네이버 지도에서 검색">' + iconSearch() + '</a>' +
+            '<span class="poll-badge">' + count + '표</span>' +
+            (canEdit ? '<button type="button" class="remove" data-action="remove-place-option" data-id="' + o.id + '" aria-label="' + esc(o.place) + ' 후보 삭제">×</button>' : '') +
+          '</li>'
+        );
+      }).join('') + '</ul>'
+    : '<p class="poll-empty">아직 등록된 장소 후보가 없어요. 아래에서 추가해 보세요.</p>';
+
+  var addPlaceHtml = canEdit
+    ? '<form class="add-form" id="add-place-form">' +
+        '<input type="text" id="new-place" placeholder="장소 입력 후 추가" maxlength="40" autocomplete="off">' +
+        '<button type="submit">추가</button>' +
+      '</form>'
+    : '';
+
+  var placePersonHtml = STATE.placeOptions.length
+    ? (STATE.attendees.length
+        ? '<ul class="roster">' + STATE.attendees.map(function(a){
+            return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' + placeSelect(a) + '</li>';
+          }).join('') + '</ul>'
+        : '<p class="empty">참석 체크에 이름을 먼저 추가해주세요.</p>')
+    : '<p class="pref-hint">후보 장소를 추가하면 여기서 투표할 수 있어요.</p>';
 
   document.getElementById('app').innerHTML =
     banner +
@@ -621,8 +788,8 @@ function render(){
       '<p class="eyebrow">사내 동호회 공지</p>' +
       titleBlock() +
       '<div class="meta">' +
-        dateBlock +
-        fieldRow('place', '장소', STATE.place, iconPin(), true) +
+        summaryRow(iconCal(), '날짜', dateSummaryText) +
+        summaryRow(iconPin(), '장소', placeSummaryText) +
       '</div>' +
     '</header>' +
     '<section class="card attend">' +
@@ -632,16 +799,34 @@ function render(){
           '<span class="stat stat-yes">참석 ' + yes + '</span>' +
           '<span class="stat stat-pending">미정 ' + pending + '</span>' +
           '<span class="stat stat-no">불참 ' + no + '</span>' +
+          '<span class="stat stat-novote">미투표 ' + novote + '</span>' +
           (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
         '</div>' +
       '</div>' +
       budgetHtml +
+      novoteCallout +
       rosterHtml +
       addFormHtml +
     '</section>' +
+    '<section class="card">' +
+      '<div class="section-head">' +
+        '<h2>날짜 투표</h2>' +
+      '</div>' +
+      dateOptionsHtml +
+      addDateHtml +
+      datePersonHtml +
+    '</section>' +
+    '<section class="card">' +
+      '<div class="section-head">' +
+        '<h2>장소 투표</h2>' +
+      '</div>' +
+      placeOptionsHtml +
+      addPlaceHtml +
+      placePersonHtml +
+    '</section>' +
     updatedHtml;
 
-  if(EDITING){
+  if(EDITING === 'title'){
     var input = document.getElementById('edit-input');
     if(input){ input.focus(); input.select(); }
   }
@@ -669,8 +854,7 @@ function persist(mutate){
   runTransaction(db, function(tx){
     return tx.get(docRef).then(function(snap){
       var data = snap.exists() ? snap.data() : JSON.parse(JSON.stringify(DEFAULT_STATE));
-      data = JSON.parse(JSON.stringify(data));
-      if(!Array.isArray(data.attendees)) data.attendees = [];
+      data = migrateState(JSON.parse(JSON.stringify(data)));
       mutate(data);
       data.updatedAt = new Date().toISOString();
       tx.set(docRef, data);
@@ -694,12 +878,7 @@ function persist(mutate){
 function handleClick(e){
   var editBtn = e.target.closest('[data-action="edit-field"]');
   if(editBtn){
-    var field = editBtn.getAttribute('data-field');
-    EDITING = field;
-    if(field === 'date'){
-      var p = parseAnyDate(STATE.date) || todayParts();
-      CAL_VIEW = { y: p.y, m: p.m };
-    }
+    EDITING = editBtn.getAttribute('data-field');
     render();
     return;
   }
@@ -712,6 +891,14 @@ function handleClick(e){
   var saveBtn = e.target.closest('[data-action="save-field"]');
   if(saveBtn){
     saveField(saveBtn.getAttribute('data-field'));
+    return;
+  }
+  var addDateBtn = e.target.closest('[data-action="add-date-toggle"]');
+  if(addDateBtn){
+    EDITING = 'add-date';
+    var t0 = todayParts();
+    CAL_VIEW = { y: t0.y, m: t0.m };
+    render();
     return;
   }
   var prevBtn = e.target.closest('[data-action="cal-prev"]');
@@ -728,10 +915,20 @@ function handleClick(e){
     render();
     return;
   }
-  var pickBtn = e.target.closest('[data-action="pick-date"]');
-  if(pickBtn){
-    var iso = pickBtn.getAttribute('data-date');
-    persist(function(data){ data.date = iso; });
+  var pickOptBtn = e.target.closest('[data-action="pick-date-option"]');
+  if(pickOptBtn){
+    var iso = pickOptBtn.getAttribute('data-date');
+    if(STATE.dateOptions.some(function(o){return o.date===iso;})){
+      showToast('이미 등록된 날짜예요.');
+      EDITING = null;
+      render();
+      return;
+    }
+    persist(function(data){
+      if(!data.dateOptions.some(function(o){return o.date===iso;})){
+        data.dateOptions.push({id: uid(), date: iso});
+      }
+    });
     return;
   }
   var statusBtn = e.target.closest('[data-action="set-status"]');
@@ -749,6 +946,62 @@ function handleClick(e){
     var rid = removeBtn.getAttribute('data-id');
     persist(function(data){
       data.attendees = data.attendees.filter(function(x){ return x.id !== rid; });
+    });
+    return;
+  }
+  var removeDateOpt = e.target.closest('[data-action="remove-date-option"]');
+  if(removeDateOpt){
+    var doid = removeDateOpt.getAttribute('data-id');
+    persist(function(data){
+      data.dateOptions = data.dateOptions.filter(function(o){ return o.id !== doid; });
+      data.attendees.forEach(function(a){ if(a.datePick === doid) a.datePick = null; });
+    });
+    return;
+  }
+  var removePlaceOpt = e.target.closest('[data-action="remove-place-option"]');
+  if(removePlaceOpt){
+    var poid = removePlaceOpt.getAttribute('data-id');
+    persist(function(data){
+      data.placeOptions = data.placeOptions.filter(function(o){ return o.id !== poid; });
+      data.attendees.forEach(function(a){ if(a.placePick === poid) a.placePick = null; });
+    });
+    return;
+  }
+  var copyBtn = e.target.closest('[data-action="copy-novote"]');
+  if(copyBtn){
+    var names = STATE.attendees.filter(function(a){return !a.status;}).map(function(a){return a.name;});
+    var text = '아직 참석 여부를 체크 안 한 사람: ' + names.join(', ');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        showToast('복사했어요.');
+      }).catch(function(){
+        showToast('복사에 실패했어요.');
+      });
+    } else {
+      showToast('이 브라우저는 복사를 지원하지 않아요.');
+    }
+    return;
+  }
+}
+
+function handleChange(e){
+  var dateSel = e.target.closest('[data-action="pick-date-pref"]');
+  if(dateSel){
+    var did = dateSel.getAttribute('data-id');
+    var dval = dateSel.value || null;
+    persist(function(data){
+      var a = data.attendees.find(function(x){ return x.id === did; });
+      if(a) a.datePick = dval;
+    });
+    return;
+  }
+  var placeSel = e.target.closest('[data-action="pick-place-pref"]');
+  if(placeSel){
+    var pid = placeSel.getAttribute('data-id');
+    var pval = placeSel.value || null;
+    persist(function(data){
+      var a = data.attendees.find(function(x){ return x.id === pid; });
+      if(a) a.placePick = pval;
     });
     return;
   }
@@ -778,16 +1031,35 @@ function handleSubmit(e){
     var name = input.value.trim();
     if(!name) return;
     persist(function(data){
-      data.attendees.push({id: uid(), name: name, status: 'pending'});
+      data.attendees.push({id: uid(), name: name, status: null, datePick: null, placePick: null});
     });
     var again = document.getElementById('new-name');
     if(again){ again.value = ''; again.focus(); }
+    return;
+  }
+  if(e.target && e.target.id === 'add-place-form'){
+    e.preventDefault();
+    var pinput = document.getElementById('new-place');
+    var place = pinput.value.trim();
+    if(!place) return;
+    if(STATE.placeOptions.some(function(o){return o.place===place;})){
+      showToast('이미 등록된 장소예요.');
+      return;
+    }
+    persist(function(data){
+      if(!data.placeOptions.some(function(o){return o.place===place;})){
+        data.placeOptions.push({id: uid(), place: place});
+      }
+    });
+    var pagain = document.getElementById('new-place');
+    if(pagain){ pagain.value = ''; pagain.focus(); }
   }
 }
 
 function init(){
   var app = document.getElementById('app');
   app.addEventListener('click', handleClick);
+  app.addEventListener('change', handleChange);
   app.addEventListener('keydown', handleKeydown);
   app.addEventListener('submit', handleSubmit);
   render();
@@ -818,9 +1090,7 @@ function init(){
 
   onSnapshot(docRef, function(snap){
     if(snap.exists()){
-      var data = snap.data();
-      if(!Array.isArray(data.attendees)) data.attendees = [];
-      STATE = data;
+      STATE = migrateState(snap.data());
     } else {
       STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
       setDoc(docRef, STATE).catch(function(err){ console.error(err); });
