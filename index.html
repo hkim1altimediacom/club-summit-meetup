@@ -78,6 +78,10 @@ body{
   font-family:'Gothic A1',-apple-system,'Malgun Gothic',sans-serif;
   -webkit-font-smoothing:antialiased;
   padding:32px 16px 64px;
+  /* 버튼 클릭마다 화면 전체를 새로 그리는데, 브라우저의 자동 스크롤 보정
+     기능이 그 순간 스크롤 위치를 살짝 튀게 만들 수 있어 꺼둡니다.
+     (스크롤 위치 복원은 render()에서 직접 처리해요.) */
+  overflow-anchor:none;
 }
 .wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
 .poll-columns{display:flex;flex-direction:column;gap:16px;}
@@ -228,6 +232,7 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
   font-variant-numeric:tabular-nums;
 }
 .stat-saving{background:var(--surface);color:var(--ink-faint);border:1px solid var(--border);}
+.stat-saving-slot{visibility:hidden;}
 .poll-cost{font-size:12px;color:var(--ink-faint);flex:none;white-space:nowrap;font-variant-numeric:tabular-nums;}
 .poll-row.poll-lead .poll-cost{color:var(--accent-strong);font-weight:700;}
 .callout{
@@ -535,6 +540,52 @@ function esc(s){
 function uid(){
   return 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 }
+
+// ---------------------------------------------------------------------
+// 클릭 위치 고정(스크롤 튐 방지)
+// ---------------------------------------------------------------------
+// data-action/data-id(/data-opt)로 식별되는 버튼(투표 칩 등)을 클릭하면,
+// 화면을 다시 그린 뒤에도 그 버튼이 같은 화면 위치에 남아있도록 스크롤을
+// 보정해요. id 값은 uid()로 만들어지는 안전한 문자열이라 별도 escape 없이
+// 그대로 선택자에 써도 괜찮아요.
+function isSafeAttrValue(v){
+  return typeof v === 'string' && v.indexOf('"') === -1 && v.indexOf('\\') === -1;
+}
+var ANCHOR_ID_ATTRS = ['data-id', 'data-date']; // 버튼마다 고유 식별자로 쓰는 속성 이름
+function findAnchorEl(el){
+  var node = el;
+  while(node && node !== document.body){
+    if(node.getAttribute && node.getAttribute('data-action')){
+      for(var i = 0; i < ANCHOR_ID_ATTRS.length; i++){
+        if(node.getAttribute(ANCHOR_ID_ATTRS[i])) return node;
+      }
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+function anchorSelector(info){
+  if(!info) return null;
+  var sel = '[data-action="' + info.action + '"][' + info.idAttr + '="' + info.id + '"]';
+  if(info.opt) sel += '[data-opt="' + info.opt + '"]';
+  return sel;
+}
+function captureScrollAnchor(el){
+  var anchorEl = findAnchorEl(el);
+  if(!anchorEl) { SCROLL_ANCHOR = null; return; }
+  var action = anchorEl.getAttribute('data-action');
+  var idAttr = null, id = null;
+  for(var i = 0; i < ANCHOR_ID_ATTRS.length; i++){
+    var v = anchorEl.getAttribute(ANCHOR_ID_ATTRS[i]);
+    if(v){ idAttr = ANCHOR_ID_ATTRS[i]; id = v; break; }
+  }
+  var opt = anchorEl.getAttribute('data-opt');
+  if(!isSafeAttrValue(action) || !isSafeAttrValue(id) || (opt && !isSafeAttrValue(opt))){
+    SCROLL_ANCHOR = null;
+    return;
+  }
+  SCROLL_ANCHOR = { action: action, idAttr: idAttr, id: id, opt: opt || null, top: anchorEl.getBoundingClientRect().top };
+}
 function iconPin(){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
 }
@@ -672,6 +723,10 @@ var AUTH_READY = false;  // anonymous sign-in finished
 var LOAD_ERROR = false;
 var SAVING = false;
 var toastTimer = null;
+// 클릭한 버튼을 다시 그리기 전후로 같은 화면 위치에 고정시켜서, 그 위/아래
+// 콘텐츠 높이가 바뀌어도(예: 미투표 안내 문구가 줄어듦) 스크롤이 튀어보이지
+// 않도록 하기 위한 값이에요.
+var SCROLL_ANCHOR = null;
 var IS_ADMIN = false;
 try { IS_ADMIN = localStorage.getItem('clubAdminUnlocked') === '1'; } catch(e){}
 
@@ -754,6 +809,11 @@ function placeChips(a){
 }
 
 function render(){
+  // 버튼 클릭 후 페이지 전체를 다시 그리는 방식이라, 그리는 중간에 위쪽
+  // 콘텐츠 높이가 바뀌면(예: "저장 중…" 표시, 미투표 안내 문구 등) 브라우저가
+  // 스크롤 위치를 살짝 보정하면서 화면이 순간적으로 움찔거릴 수 있어요.
+  // 다시 그리기 전후로 스크롤 위치를 그대로 복원해서 이 현상을 막습니다.
+  var scrollX = window.scrollX, scrollY = window.scrollY;
   var canEdit = canEditNow();
   var isAdmin = isAdminNow();
 
@@ -920,7 +980,7 @@ function render(){
         '<div class="section-head">' +
           '<h2>날짜 투표</h2>' +
           '<div class="section-actions">' +
-            (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
+            '<span class="stat stat-saving' + (SAVING ? '' : ' stat-saving-slot') + '">저장 중…</span>' +
             (isAdmin ? '<button type="button" class="reset-btn" data-action="reset-date">투표 초기화</button>' : '') +
           '</div>' +
         '</div>' +
@@ -945,6 +1005,17 @@ function render(){
   if(EDITING === 'title'){
     var input = document.getElementById('edit-input');
     if(input){ input.focus(); input.select(); }
+  } else {
+    // 편집 중이 아닐 때만 스크롤 위치를 복원해요 (편집 시작 시엔 입력창으로
+    // 포커스 이동하면서 자연스럽게 스크롤되는 게 맞으니 그대로 둡니다).
+    var anchorSel = anchorSelector(SCROLL_ANCHOR);
+    var anchorEl = anchorSel ? document.querySelector(anchorSel) : null;
+    if(anchorEl){
+      var delta = anchorEl.getBoundingClientRect().top - SCROLL_ANCHOR.top;
+      if(delta) window.scrollBy(0, delta);
+    } else {
+      window.scrollTo(scrollX, scrollY);
+    }
   }
 }
 
@@ -992,6 +1063,7 @@ function persist(mutate){
 }
 
 function handleClick(e){
+  captureScrollAnchor(e.target);
   var editBtn = e.target.closest('[data-action="edit-field"]');
   if(editBtn){
     EDITING = editBtn.getAttribute('data-field');
