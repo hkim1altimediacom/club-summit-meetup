@@ -402,7 +402,10 @@ button.poll-main{border:none;background:transparent;color:inherit;font:inherit;t
 .log-remove{border:none;background:transparent;color:var(--ink-faint);cursor:pointer;font-size:14px;line-height:1;flex:none;padding:2px 4px;border-radius:6px;}
 .log-remove:hover{background:var(--decline-bg);color:var(--decline);}
 .log-empty{font-size:13px;color:var(--ink-faint);margin:0 0 10px;}
-.log-form input#log-name{flex:none;width:84px;}
+.log-toggle{display:block;border:none;background:transparent;color:var(--accent-strong);font-size:12px;font-weight:700;cursor:pointer;padding:2px 0 10px;}
+.log-toggle:hover{text-decoration:underline;}
+.log-form select#log-name{flex:none;width:96px;font:inherit;font-size:14px;padding:10px 6px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--ink);}
+.log-form select#log-name:disabled{color:var(--ink-faint);}
 .log-form input#log-text{flex:1;min-width:0;}
 .admin-row{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
 .admin-badge{font-size:11px;font-weight:700;color:var(--attend);background:var(--attend-bg);padding:5px 10px;border-radius:999px;flex:none;}
@@ -734,6 +737,7 @@ var EDITING = null;      // 'title' | null
 var _t0 = todayParts();
 var CAL_VIEW = { y: _t0.y, m: _t0.m }; // 날짜 투표 캘린더는 항상 펼쳐져 있어서 미리 초기화해둡니다.
 var DATE_EXPANDED = null; // 날짜 투표에서 펼쳐서 보고 있는 후보 id
+var LOG_EXPANDED = false; // 한 줄 게시판을 전체 펼쳐서 보고 있는지 (기본은 최근 3개만)
 var LOADED = false;      // first Firestore snapshot has arrived
 var CONFIG_OK = !/PASTE_YOUR/.test(FIREBASE_CONFIG.apiKey);
 var AUTH_READY = false;  // anonymous sign-in finished
@@ -977,9 +981,11 @@ function render(){
   var placeSummaryText = buildPlaceSummaryText();
 
   // ---- 한 줄 게시판 ----
+  var LOG_COLLAPSE_LIMIT = 3;
   var logsSorted = Array.isArray(STATE.logs) ? STATE.logs.slice().reverse() : [];
-  var logsHtml = logsSorted.length
-    ? '<ul class="log-list">' + logsSorted.map(function(l){
+  var logsToShow = LOG_EXPANDED ? logsSorted : logsSorted.slice(0, LOG_COLLAPSE_LIMIT);
+  var logsHtml = logsToShow.length
+    ? '<ul class="log-list">' + logsToShow.map(function(l){
         return '<li class="log-row">' +
           '<span class="log-name">' + esc(l.name) + '</span>' +
           '<span class="log-text">' + esc(l.text) + '</span>' +
@@ -988,12 +994,23 @@ function render(){
         '</li>';
       }).join('') + '</ul>'
     : '<p class="log-empty">아직 남긴 글이 없어요.</p>';
+  var logToggleHtml = logsSorted.length > LOG_COLLAPSE_LIMIT
+    ? '<button type="button" class="log-toggle" data-action="toggle-log-expand">' +
+        (LOG_EXPANDED ? '접기' : '더보기 (전체 ' + logsSorted.length + '개)') +
+      '</button>'
+    : '';
 
   var lastLogName = '';
   try { lastLogName = localStorage.getItem('clubLogName') || ''; } catch(e){}
+  var logNameOptionsHtml = STATE.attendees.map(function(a){
+    return '<option value="' + esc(a.name) + '"' + (a.name === lastLogName ? ' selected' : '') + '>' + esc(a.name) + '</option>';
+  }).join('');
   var logFormHtml = canEdit
     ? '<form class="add-form log-form" id="log-form">' +
-        '<input type="text" id="log-name" placeholder="이름" maxlength="12" autocomplete="off" value="' + esc(lastLogName) + '">' +
+        '<select id="log-name" ' + (STATE.attendees.length ? '' : 'disabled') + '>' +
+          '<option value="" disabled' + (STATE.attendees.some(function(a){return a.name === lastLogName;}) ? '' : ' selected') + '>이름 선택</option>' +
+          logNameOptionsHtml +
+        '</select>' +
         '<input type="text" id="log-text" placeholder="한 줄 남기기" maxlength="60" autocomplete="off">' +
         '<button type="submit">남기기</button>' +
       '</form>'
@@ -1061,6 +1078,7 @@ function render(){
       '<div class="log-board">' +
         '<div class="log-board-head"><h3>한 줄 게시판</h3></div>' +
         logsHtml +
+        logToggleHtml +
         logFormHtml +
       '</div>' +
       adminRow() +
@@ -1325,6 +1343,12 @@ function handleClick(e){
       if(!Array.isArray(data.logs)) data.logs = [];
       data.logs = data.logs.filter(function(l){ return l.id !== lid; });
     });
+    return;
+  }
+  var toggleLogExpand = e.target.closest('[data-action="toggle-log-expand"]');
+  if(toggleLogExpand){
+    LOG_EXPANDED = !LOG_EXPANDED;
+    render();
     return;
   }
   var resetDateBtn = e.target.closest('[data-action="reset-date"]');
