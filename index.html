@@ -586,6 +586,18 @@ function captureScrollAnchor(el){
   }
   SCROLL_ANCHOR = { action: action, idAttr: idAttr, id: id, opt: opt || null, top: anchorEl.getBoundingClientRect().top };
 }
+
+// 투표 결과(datePicks/placePicks) 값 자체는 빼고 비교해요 - 그 값만 바뀐
+// 거라면 화면 구조는 그대로라는 뜻이라, 부분 렌더링으로 충분해요.
+function structureSignature(data){
+  return JSON.stringify({
+    title: data.title,
+    dateOptions: data.dateOptions,
+    placeOptions: data.placeOptions,
+    logs: data.logs,
+    attendees: (data.attendees || []).map(function(a){ return a.id + ':' + a.name; })
+  });
+}
 function iconPin(){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
 }
@@ -727,6 +739,10 @@ var toastTimer = null;
 // 콘텐츠 높이가 바뀌어도(예: 미투표 안내 문구가 줄어듦) 스크롤이 튀어보이지
 // 않도록 하기 위한 값이에요.
 var SCROLL_ANCHOR = null;
+// 방금 받은 문서가 "구조"(제목/후보 목록/인원 명단/게시판)까지 바뀐 건지,
+// 아니면 투표 결과만 바뀐 건지 구분하기 위한 값이에요. 후자라면 화면 전체를
+// 다시 그리지 않고 투표 현황 영역만 갱신해요 (누가 투표했든 상관없이 동작해요).
+var STATE_STRUCTURE_SIG = null;
 var IS_ADMIN = false;
 try { IS_ADMIN = localStorage.getItem('clubAdminUnlocked') === '1'; } catch(e){}
 
@@ -776,12 +792,12 @@ function titleBlock(){
   );
 }
 
-function summaryRow(iconSvg, label, text){
+function summaryRow(iconSvg, label, text, valueId){
   return (
     '<div class="meta-row">' +
       '<span class="meta-icon">' + iconSvg + '</span>' +
       '<span class="meta-label">' + label + '</span>' +
-      '<span class="meta-value">' + text + '</span>' +
+      '<span class="meta-value"' + (valueId ? ' id="' + valueId + '"' : '') + '>' + text + '</span>' +
     '</div>'
   );
 }
@@ -808,85 +824,51 @@ function placeChips(a){
   '</div>';
 }
 
-function render(){
-  // 버튼 클릭 후 페이지 전체를 다시 그리는 방식이라, 그리는 중간에 위쪽
-  // 콘텐츠 높이가 바뀌면(예: "저장 중…" 표시, 미투표 안내 문구 등) 브라우저가
-  // 스크롤 위치를 살짝 보정하면서 화면이 순간적으로 움찔거릴 수 있어요.
-  // 다시 그리기 전후로 스크롤 위치를 그대로 복원해서 이 현상을 막습니다.
-  var scrollX = window.scrollX, scrollY = window.scrollY;
-  var canEdit = canEditNow();
-  var isAdmin = isAdminNow();
-
-  var banner = '';
-  if(!CONFIG_OK){
-    banner = '<div class="readonly-banner">이 페이지는 아직 Firebase 설정이 안 됐어요. index.html의 FIREBASE_CONFIG 값을 채워주세요.</div>';
-  } else if(LOAD_ERROR){
-    banner = '<div class="readonly-banner">서버에 연결하지 못했어요. 새로고침 해보세요. (계속 안 되면 Firestore 보안 규칙을 확인해주세요)</div>';
-  } else if(!LOADED || !AUTH_READY){
-    banner = '<div class="readonly-banner">불러오는 중…</div>';
-  }
-
-  var dateLead = computeLead(STATE.dateOptions, STATE.attendees, function(a, o){ return Array.isArray(a.datePicks) && a.datePicks.indexOf(o.id) !== -1; });
-  var placeLead = computeLead(STATE.placeOptions, STATE.attendees, function(a, o){ return Array.isArray(a.placePicks) && a.placePicks.indexOf(o.id) !== -1; });
-
-  var dateSummaryText = !STATE.dateOptions.length
+// ---------------------------------------------------------------------
+// 투표 현황 조각 렌더링 (부분 렌더링용)
+// ---------------------------------------------------------------------
+// 날짜/장소 투표는 클릭 빈도가 훨씬 높은 조작이라, 페이지 전체를 다시
+// 그리지 않고 "투표 현황" 영역(집계 리스트/1위 표시/미투표 안내/요약 문구)만
+// 새로 그릴 수 있도록 이 조각들을 별도 함수로 분리해뒀어요. render()도
+// 이 함수들을 그대로 호출해서 로직이 두 곳에 따로 존재하지 않게 합니다.
+function computeDateLead(){
+  return computeLead(STATE.dateOptions, STATE.attendees, function(a, o){ return Array.isArray(a.datePicks) && a.datePicks.indexOf(o.id) !== -1; });
+}
+function computePlaceLead(){
+  return computeLead(STATE.placeOptions, STATE.attendees, function(a, o){ return Array.isArray(a.placePicks) && a.placePicks.indexOf(o.id) !== -1; });
+}
+function buildDateSummaryText(){
+  var dateLead = computeDateLead();
+  return !STATE.dateOptions.length
     ? '아직 후보 없음'
     : (dateLead.count === 0
         ? '아직 투표 없음'
         : esc(dateLead.leaders.map(function(o){ return formatDateDisplay(o.date); }).join(' / ')) + ' · ' + dateLead.count + '표');
-  var placeSummaryText = !STATE.placeOptions.length
+}
+function buildPlaceSummaryText(){
+  var placeLead = computePlaceLead();
+  return !STATE.placeOptions.length
     ? '아직 후보 없음'
     : (placeLead.count === 0
         ? '아직 투표 없음'
         : esc(placeLead.leaders.map(function(o){ return o.place; }).join(' / ')) + ' · ' + placeLead.count + '표');
-
-  // ---- 한 줄 게시판 ----
-  var logsSorted = Array.isArray(STATE.logs) ? STATE.logs.slice().reverse() : [];
-  var logsHtml = logsSorted.length
-    ? '<ul class="log-list">' + logsSorted.map(function(l){
-        return '<li class="log-row">' +
-          '<span class="log-name">' + esc(l.name) + '</span>' +
-          '<span class="log-text">' + esc(l.text) + '</span>' +
-          '<span class="log-time">' + esc(formatUpdated(l.ts)) + '</span>' +
-          (isAdmin ? '<button type="button" class="log-remove" data-action="remove-log" data-id="' + l.id + '" aria-label="글 삭제">×</button>' : '') +
-        '</li>';
-      }).join('') + '</ul>'
-    : '<p class="log-empty">아직 남긴 글이 없어요.</p>';
-
-  var lastLogName = '';
-  try { lastLogName = localStorage.getItem('clubLogName') || ''; } catch(e){}
-  var logFormHtml = canEdit
-    ? '<form class="add-form log-form" id="log-form">' +
-        '<input type="text" id="log-name" placeholder="이름" maxlength="12" autocomplete="off" value="' + esc(lastLogName) + '">' +
-        '<input type="text" id="log-text" placeholder="한 줄 남기기" maxlength="60" autocomplete="off">' +
-        '<button type="submit">남기기</button>' +
-      '</form>'
-    : '';
-
+}
+function buildDateNovoteCallout(){
+  var canEdit = canEditNow();
   var dateNovoteNames = STATE.attendees.filter(function(a){return !Array.isArray(a.datePicks) || !a.datePicks.length;}).map(function(a){return a.name;});
-  var dateNovoteCallout = dateNovoteNames.length
+  return dateNovoteNames.length
     ? '<div class="callout"><span>아직 날짜 투표를 안 한 사람: <b>' + esc(dateNovoteNames.join(', ')) + '</b></span>' +
         (canEdit ? '<button type="button" class="callout-btn" data-action="copy-novote">복사</button>' : '') +
       '</div>'
     : '';
-
-  var attendeeAddFormHtml = canEdit
-    ? '<form class="add-form" id="add-form">' +
-        '<input type="text" id="new-name" placeholder="이름 입력 후 추가" maxlength="20" autocomplete="off">' +
-        '<button type="submit">추가</button>' +
-      '</form>'
-    : '';
-
-  var updatedHtml = STATE.updatedAt
-    ? '<p class="updated">마지막 수정 · ' + esc(formatUpdated(STATE.updatedAt)) + '</p>'
-    : '';
-
-  // ---- 날짜 투표 카드 ----
+}
+function buildDateOptionsHtml(){
+  var isAdmin = isAdminNow();
+  var dateLead = computeDateLead();
   if(DATE_EXPANDED && !STATE.dateOptions.some(function(o){return o.id===DATE_EXPANDED;})){
     DATE_EXPANDED = null;
   }
-  var candidateISOs = STATE.dateOptions.map(function(o){ return o.date; });
-  var dateOptionsHtml = STATE.dateOptions.length
+  return STATE.dateOptions.length
     ? '<ul class="poll-list">' + STATE.dateOptions.map(function(o){
         var count = STATE.attendees.filter(function(a){return Array.isArray(a.datePicks) && a.datePicks.indexOf(o.id)!==-1;}).length;
         var isLead = dateLead.count > 0 && dateLead.leaders.some(function(l){return l.id===o.id;});
@@ -913,21 +895,11 @@ function render(){
         );
       }).join('') + '</ul>'
     : '<p class="poll-empty">' + (isAdmin ? '아직 등록된 날짜 후보가 없어요. 아래 달력에서 추가해 보세요.' : '아직 등록된 날짜 후보가 없어요. 운영자가 추가하면 여기에 표시돼요.') + '</p>';
-
-  var dateCalendarHtml = isAdmin ? buildCalendarGrid(CAL_VIEW.y, CAL_VIEW.m, candidateISOs) : '';
-
-  var datePersonHtml = (STATE.attendees.length
-    ? '<ul class="roster">' + STATE.attendees.map(function(a){
-        return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' +
-          (STATE.dateOptions.length ? dateChips(a) : '') +
-          (isAdmin ? '<button type="button" class="remove" data-action="remove" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 삭제">×</button>' : '') +
-        '</li>';
-      }).join('') + '</ul>'
-    : '<p class="empty">아직 등록된 인원이 없어요. 아래에서 이름을 추가해 보세요.</p>') +
-    (!STATE.dateOptions.length ? '<p class="pref-hint">후보 날짜를 추가하면 여기서 투표할 수 있어요.</p>' : '');
-
-  // ---- 장소 투표 카드 ----
-  var placeOptionsHtml = STATE.placeOptions.length
+}
+function buildPlaceOptionsHtml(){
+  var isAdmin = isAdminNow();
+  var placeLead = computePlaceLead();
+  return STATE.placeOptions.length
     ? '<ul class="poll-list">' + STATE.placeOptions.map(function(o){
         var count = STATE.attendees.filter(function(a){return Array.isArray(a.placePicks) && a.placePicks.indexOf(o.id)!==-1;}).length;
         var isLead = placeLead.count > 0 && placeLead.leaders.some(function(l){return l.id===o.id;});
@@ -943,6 +915,119 @@ function render(){
         );
       }).join('') + '</ul>'
     : '<p class="poll-empty">아직 등록된 장소 후보가 없어요. 아래에서 추가해 보세요.</p>';
+}
+
+// 투표 칩을 눌렀을 때: 화면 전체 대신 위 조각들만 다시 그려요.
+function patchDateVoteUI(){
+  var wrap = document.getElementById('date-poll-list-wrap');
+  if(wrap) wrap.innerHTML = buildDateOptionsHtml();
+  var novoteWrap = document.getElementById('date-novote-wrap');
+  if(novoteWrap) novoteWrap.innerHTML = buildDateNovoteCallout();
+  var summaryEl = document.getElementById('date-summary-value');
+  if(summaryEl) summaryEl.innerHTML = buildDateSummaryText();
+}
+function patchPlaceVoteUI(){
+  var wrap = document.getElementById('place-poll-list-wrap');
+  if(wrap) wrap.innerHTML = buildPlaceOptionsHtml();
+  var summaryEl = document.getElementById('place-summary-value');
+  if(summaryEl) summaryEl.innerHTML = buildPlaceSummaryText();
+}
+
+// data 객체(전체 문서) 위에서 날짜/장소 선호를 토글해요. 낙관적 UI 업데이트와
+// 실제 저장(트랜잭션) 양쪽에서 같은 함수를 재사용해서 로직이 어긋나지 않게 합니다.
+function toggleDatePickOn(data, attendeeId, optId){
+  var a = data.attendees.find(function(x){ return x.id === attendeeId; });
+  if(!a) return;
+  if(!Array.isArray(a.datePicks)) a.datePicks = [];
+  var idx = a.datePicks.indexOf(optId);
+  if(idx === -1) a.datePicks.push(optId); else a.datePicks.splice(idx, 1);
+}
+function togglePlacePickOn(data, attendeeId, optId){
+  var a = data.attendees.find(function(x){ return x.id === attendeeId; });
+  if(!a) return;
+  if(!Array.isArray(a.placePicks)) a.placePicks = [];
+  var idx = a.placePicks.indexOf(optId);
+  if(idx === -1) a.placePicks.push(optId); else a.placePicks.splice(idx, 1);
+}
+
+function render(){
+  // 버튼 클릭 후 페이지 전체를 다시 그리는 방식이라, 그리는 중간에 위쪽
+  // 콘텐츠 높이가 바뀌면(예: "저장 중…" 표시, 미투표 안내 문구 등) 브라우저가
+  // 스크롤 위치를 살짝 보정하면서 화면이 순간적으로 움찔거릴 수 있어요.
+  // 다시 그리기 전후로 스크롤 위치를 그대로 복원해서 이 현상을 막습니다.
+  var scrollX = window.scrollX, scrollY = window.scrollY;
+  var canEdit = canEditNow();
+  var isAdmin = isAdminNow();
+
+  var banner = '';
+  if(!CONFIG_OK){
+    banner = '<div class="readonly-banner">이 페이지는 아직 Firebase 설정이 안 됐어요. index.html의 FIREBASE_CONFIG 값을 채워주세요.</div>';
+  } else if(LOAD_ERROR){
+    banner = '<div class="readonly-banner">서버에 연결하지 못했어요. 새로고침 해보세요. (계속 안 되면 Firestore 보안 규칙을 확인해주세요)</div>';
+  } else if(!LOADED || !AUTH_READY){
+    banner = '<div class="readonly-banner">불러오는 중…</div>';
+  }
+
+  var dateSummaryText = buildDateSummaryText();
+  var placeSummaryText = buildPlaceSummaryText();
+
+  // ---- 한 줄 게시판 ----
+  var logsSorted = Array.isArray(STATE.logs) ? STATE.logs.slice().reverse() : [];
+  var logsHtml = logsSorted.length
+    ? '<ul class="log-list">' + logsSorted.map(function(l){
+        return '<li class="log-row">' +
+          '<span class="log-name">' + esc(l.name) + '</span>' +
+          '<span class="log-text">' + esc(l.text) + '</span>' +
+          '<span class="log-time">' + esc(formatUpdated(l.ts)) + '</span>' +
+          (isAdmin ? '<button type="button" class="log-remove" data-action="remove-log" data-id="' + l.id + '" aria-label="글 삭제">×</button>' : '') +
+        '</li>';
+      }).join('') + '</ul>'
+    : '<p class="log-empty">아직 남긴 글이 없어요.</p>';
+
+  var lastLogName = '';
+  try { lastLogName = localStorage.getItem('clubLogName') || ''; } catch(e){}
+  var logFormHtml = canEdit
+    ? '<form class="add-form log-form" id="log-form">' +
+        '<input type="text" id="log-name" placeholder="이름" maxlength="12" autocomplete="off" value="' + esc(lastLogName) + '">' +
+        '<input type="text" id="log-text" placeholder="한 줄 남기기" maxlength="60" autocomplete="off">' +
+        '<button type="submit">남기기</button>' +
+      '</form>'
+    : '';
+
+  var dateNovoteCallout = buildDateNovoteCallout();
+
+  var attendeeAddFormHtml = canEdit
+    ? '<form class="add-form" id="add-form">' +
+        '<input type="text" id="new-name" placeholder="이름 입력 후 추가" maxlength="20" autocomplete="off">' +
+        '<button type="submit">추가</button>' +
+      '</form>'
+    : '';
+
+  var updatedHtml = STATE.updatedAt
+    ? '<p class="updated">마지막 수정 · ' + esc(formatUpdated(STATE.updatedAt)) + '</p>'
+    : '';
+
+  // ---- 날짜 투표 카드 ----
+  if(DATE_EXPANDED && !STATE.dateOptions.some(function(o){return o.id===DATE_EXPANDED;})){
+    DATE_EXPANDED = null;
+  }
+  var candidateISOs = STATE.dateOptions.map(function(o){ return o.date; });
+  var dateOptionsHtml = buildDateOptionsHtml();
+
+  var dateCalendarHtml = isAdmin ? buildCalendarGrid(CAL_VIEW.y, CAL_VIEW.m, candidateISOs) : '';
+
+  var datePersonHtml = (STATE.attendees.length
+    ? '<ul class="roster">' + STATE.attendees.map(function(a){
+        return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' +
+          (STATE.dateOptions.length ? dateChips(a) : '') +
+          (isAdmin ? '<button type="button" class="remove" data-action="remove" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 삭제">×</button>' : '') +
+        '</li>';
+      }).join('') + '</ul>'
+    : '<p class="empty">아직 등록된 인원이 없어요. 아래에서 이름을 추가해 보세요.</p>') +
+    (!STATE.dateOptions.length ? '<p class="pref-hint">후보 날짜를 추가하면 여기서 투표할 수 있어요.</p>' : '');
+
+  // ---- 장소 투표 카드 ----
+  var placeOptionsHtml = buildPlaceOptionsHtml();
 
   var addPlaceHtml = canEdit
     ? '<form class="add-form" id="add-place-form">' +
@@ -965,8 +1050,8 @@ function render(){
       '<p class="eyebrow">사내 동호회 공지</p>' +
       titleBlock() +
       '<div class="meta">' +
-        summaryRow(iconCal(), '날짜', dateSummaryText) +
-        summaryRow(iconPin(), '장소', placeSummaryText) +
+        summaryRow(iconCal(), '날짜', dateSummaryText, 'date-summary-value') +
+        summaryRow(iconPin(), '장소', placeSummaryText, 'place-summary-value') +
       '</div>' +
       '<div class="log-board">' +
         '<div class="log-board-head"><h3>한 줄 게시판</h3></div>' +
@@ -984,8 +1069,8 @@ function render(){
             (isAdmin ? '<button type="button" class="reset-btn" data-action="reset-date">투표 초기화</button>' : '') +
           '</div>' +
         '</div>' +
-        dateNovoteCallout +
-        dateOptionsHtml +
+        '<div id="date-novote-wrap">' + dateNovoteCallout + '</div>' +
+        '<div id="date-poll-list-wrap">' + dateOptionsHtml + '</div>' +
         dateCalendarHtml +
         datePersonHtml +
         attendeeAddFormHtml +
@@ -995,7 +1080,7 @@ function render(){
           '<h2>장소 투표</h2>' +
           (isAdmin ? '<div class="section-actions"><button type="button" class="reset-btn" data-action="reset-place">투표 초기화</button></div>' : '') +
         '</div>' +
-        placeOptionsHtml +
+        '<div id="place-poll-list-wrap">' + placeOptionsHtml + '</div>' +
         addPlaceHtml +
         placePersonHtml +
       '</section>' +
@@ -1033,11 +1118,17 @@ function showToast(msg){
 // ---------------------------------------------------------------------
 var db = null, auth = null, docRef = null;
 
-function persist(mutate){
+function persist(mutate, opts){
+  opts = opts || {};
   if(!canEditNow()) return;
   EDITING = null;
-  SAVING = true;
-  render();
+  // quiet 모드(투표 칩처럼 자주 누르는 조작)에서는 "저장 중…" 표시를 위해
+  // 화면 전체를 다시 그리지 않아요 - 이미 버튼 자체는 즉시 눌린 것처럼
+  // 보여줬고, 저장이 끝나면 onSnapshot이 투표 현황만 부분적으로 갱신해요.
+  if(!opts.quiet){
+    SAVING = true;
+    render();
+  }
   runTransaction(db, function(tx){
     return tx.get(docRef).then(function(snap){
       var data = snap.exists() ? snap.data() : JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -1047,17 +1138,22 @@ function persist(mutate){
       tx.set(docRef, data);
     });
   }).then(function(){
-    SAVING = false;
-    // Don't rely on the onSnapshot listener to re-render: whether the
-    // snapshot for this write arrives before or after this handler runs
-    // is not guaranteed, so re-enable the UI here regardless. If the
-    // snapshot lands after, it will simply render again with the
-    // confirmed data.
-    render();
+    if(!opts.quiet){
+      SAVING = false;
+      // Don't rely on the onSnapshot listener to re-render: whether the
+      // snapshot for this write arrives before or after this handler runs
+      // is not guaranteed, so re-enable the UI here regardless. If the
+      // snapshot lands after, it will simply render again with the
+      // confirmed data.
+      render();
+    }
   }).catch(function(err){
     console.error(err);
-    SAVING = false;
-    render();
+    if(!opts.quiet){
+      SAVING = false;
+      render();
+    }
+    if(opts.onError) opts.onError();
     showToast('저장하지 못했어요. 다시 시도해 주세요.');
   });
 }
@@ -1119,19 +1215,34 @@ function handleClick(e){
   if(toggleDateList){
     var tid = toggleDateList.getAttribute('data-id');
     DATE_EXPANDED = (DATE_EXPANDED === tid) ? null : tid;
-    render();
+    // 이것도 투표 현황(날짜별 참여자 펼쳐보기) 영역 안의 조작이라 그 부분만
+    // 다시 그려요 - 저장이 필요 없는 화면 전용 상태라 더 간단해요.
+    patchDateVoteUI();
     return;
   }
   var toggleDatePick = e.target.closest('[data-action="toggle-date-pick"]');
   if(toggleDatePick && !toggleDatePick.disabled){
     var tpid = toggleDatePick.getAttribute('data-id');
     var tpOptId = toggleDatePick.getAttribute('data-opt');
-    persist(function(data){
-      var a = data.attendees.find(function(x){ return x.id === tpid; });
-      if(!a) return;
-      if(!Array.isArray(a.datePicks)) a.datePicks = [];
-      var idx = a.datePicks.indexOf(tpOptId);
-      if(idx === -1) a.datePicks.push(tpOptId); else a.datePicks.splice(idx, 1);
+    // 1) 누른 칩 자체는 화면 전체를 다시 그리지 않고 바로 반영해요.
+    var tpWasActive = toggleDatePick.classList.contains('active');
+    toggleDatePick.classList.toggle('active', !tpWasActive);
+    toggleDatePick.setAttribute('aria-pressed', (!tpWasActive) ? 'true' : 'false');
+    // 2) 투표 현황(집계/미투표 안내/요약 문구)만 함께 갱신해요.
+    toggleDatePickOn(STATE, tpid, tpOptId);
+    patchDateVoteUI();
+    // 3) 서버에 저장하고, 실패하면 방금 반영한 내용을 되돌려요.
+    persist(function(data){ toggleDatePickOn(data, tpid, tpOptId); }, {
+      quiet: true,
+      onError: function(){
+        toggleDatePickOn(STATE, tpid, tpOptId);
+        patchDateVoteUI();
+        var btn = document.querySelector('[data-action="toggle-date-pick"][data-id="' + tpid + '"][data-opt="' + tpOptId + '"]');
+        if(btn){
+          btn.classList.toggle('active', tpWasActive);
+          btn.setAttribute('aria-pressed', tpWasActive ? 'true' : 'false');
+        }
+      }
     });
     return;
   }
@@ -1139,12 +1250,22 @@ function handleClick(e){
   if(togglePlacePick && !togglePlacePick.disabled){
     var tppid = togglePlacePick.getAttribute('data-id');
     var tppOptId = togglePlacePick.getAttribute('data-opt');
-    persist(function(data){
-      var a = data.attendees.find(function(x){ return x.id === tppid; });
-      if(!a) return;
-      if(!Array.isArray(a.placePicks)) a.placePicks = [];
-      var idx = a.placePicks.indexOf(tppOptId);
-      if(idx === -1) a.placePicks.push(tppOptId); else a.placePicks.splice(idx, 1);
+    var tppWasActive = togglePlacePick.classList.contains('active');
+    togglePlacePick.classList.toggle('active', !tppWasActive);
+    togglePlacePick.setAttribute('aria-pressed', (!tppWasActive) ? 'true' : 'false');
+    togglePlacePickOn(STATE, tppid, tppOptId);
+    patchPlaceVoteUI();
+    persist(function(data){ togglePlacePickOn(data, tppid, tppOptId); }, {
+      quiet: true,
+      onError: function(){
+        togglePlacePickOn(STATE, tppid, tppOptId);
+        patchPlaceVoteUI();
+        var pbtn = document.querySelector('[data-action="toggle-place-pick"][data-id="' + tppid + '"][data-opt="' + tppOptId + '"]');
+        if(pbtn){
+          pbtn.classList.toggle('active', tppWasActive);
+          pbtn.setAttribute('aria-pressed', tppWasActive ? 'true' : 'false');
+        }
+      }
     });
     return;
   }
@@ -1363,14 +1484,30 @@ function init(){
   });
 
   onSnapshot(docRef, function(snap){
+    var newState, isNewDoc = false;
     if(snap.exists()){
-      STATE = migrateState(snap.data());
+      newState = migrateState(snap.data());
     } else {
-      STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      newState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      isNewDoc = true;
+    }
+    var newSig = structureSignature(newState);
+    // 이전에 이미 한 번 불러온 상태에서, 인원/후보/게시판/제목 구성은 그대로고
+    // 투표 결과만 바뀐 경우엔 화면 전체를 다시 그리지 않아요 - 다른 사람이
+    // 투표해서 이 업데이트가 온 경우에도 마찬가지로 적용돼요.
+    var sameStructure = LOADED && STATE_STRUCTURE_SIG !== null && STATE_STRUCTURE_SIG === newSig;
+    STATE = newState;
+    STATE_STRUCTURE_SIG = newSig;
+    LOADED = true;
+    if(isNewDoc){
       setDoc(docRef, STATE).catch(function(err){ console.error(err); });
     }
-    LOADED = true;
-    render();
+    if(sameStructure){
+      patchDateVoteUI();
+      patchPlaceVoteUI();
+    } else {
+      render();
+    }
   }, function(err){
     console.error(err);
     LOAD_ERROR = true;
