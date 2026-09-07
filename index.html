@@ -540,18 +540,18 @@ const DEFAULT_STATE = {
     {id:"p01", place:"육각고기"}
   ],
   attendees: [
-    {id:"m01", name:"김환", status:"yes", datePicks:[], placePick:null},
-    {id:"m02", name:"엄태인", status:"yes", datePicks:[], placePick:null},
-    {id:"m03", name:"유재형", status:"yes", datePicks:[], placePick:null},
-    {id:"m04", name:"이상현", status:"yes", datePicks:[], placePick:null},
-    {id:"m05", name:"이효성", status:"yes", datePicks:[], placePick:null},
-    {id:"m06", name:"임태영", status:"pending", datePicks:[], placePick:null},
-    {id:"m07", name:"장재성", status:"pending", datePicks:[], placePick:null},
-    {id:"m08", name:"최재영", status:"pending", datePicks:[], placePick:null},
-    {id:"m09", name:"최정", status:"pending", datePicks:[], placePick:null},
-    {id:"m10", name:"홍원일", status:"pending", datePicks:[], placePick:null},
-    {id:"m11", name:"이정희", status:"pending", datePicks:[], placePick:null},
-    {id:"m12", name:"임수철", status:"pending", datePicks:[], placePick:null}
+    {id:"m01", name:"김환", status:"yes", datePicks:[], placePicks:[]},
+    {id:"m02", name:"엄태인", status:"yes", datePicks:[], placePicks:[]},
+    {id:"m03", name:"유재형", status:"yes", datePicks:[], placePicks:[]},
+    {id:"m04", name:"이상현", status:"yes", datePicks:[], placePicks:[]},
+    {id:"m05", name:"이효성", status:"yes", datePicks:[], placePicks:[]},
+    {id:"m06", name:"임태영", status:"pending", datePicks:[], placePicks:[]},
+    {id:"m07", name:"장재성", status:"pending", datePicks:[], placePicks:[]},
+    {id:"m08", name:"최재영", status:"pending", datePicks:[], placePicks:[]},
+    {id:"m09", name:"최정", status:"pending", datePicks:[], placePicks:[]},
+    {id:"m10", name:"홍원일", status:"pending", datePicks:[], placePicks:[]},
+    {id:"m11", name:"이정희", status:"pending", datePicks:[], placePicks:[]},
+    {id:"m12", name:"임수철", status:"pending", datePicks:[], placePicks:[]}
   ],
   updatedAt: null
 };
@@ -668,7 +668,12 @@ function migrateState(data){
       a.datePicks = (a.datePick !== undefined && a.datePick !== null) ? [a.datePick] : [];
     }
     delete a.datePick;
-    if(a.placePick === undefined) a.placePick = null;
+    if(!Array.isArray(a.placePicks)){
+      // 예전 버전은 장소도 1개만 고를 수 있었어요(placePick). 여러 장소를 고를 수
+      // 있도록 바뀌면서 그 값을 배열로 옮겨줍니다.
+      a.placePicks = (a.placePick !== undefined && a.placePick !== null) ? [a.placePick] : [];
+    }
+    delete a.placePick;
     if(a.status === undefined) a.status = null;
   });
   return data;
@@ -782,12 +787,15 @@ function dateChips(a){
   '</div>';
 }
 
-function placeSelect(a){
+function placeChips(a){
   var canEdit = canEditNow();
-  var opts = '<option value="">미투표</option>' + STATE.placeOptions.map(function(o){
-    return '<option value="' + o.id + '"' + (a.placePick===o.id?' selected':'') + '>' + esc(o.place) + '</option>';
-  }).join('');
-  return '<select class="pref-select" data-action="pick-place-pref" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 장소 선호" ' + (canEdit?'':'disabled') + '>' + opts + '</select>';
+  var picks = Array.isArray(a.placePicks) ? a.placePicks : [];
+  return '<div class="chip-group" role="group" aria-label="' + esc(a.name) + ' 장소 선호">' +
+    STATE.placeOptions.map(function(o){
+      var picked = picks.indexOf(o.id) !== -1;
+      return '<button type="button" class="chip-btn' + (picked?' active':'') + '" data-action="toggle-place-pick" data-id="' + a.id + '" data-opt="' + o.id + '" aria-pressed="' + (picked?'true':'false') + '" ' + (canEdit?'':'disabled') + '>' + esc(o.place) + '</button>';
+    }).join('') +
+  '</div>';
 }
 
 function render(){
@@ -808,7 +816,7 @@ function render(){
   }
 
   var dateLead = computeLead(STATE.dateOptions, STATE.attendees, function(a, o){ return Array.isArray(a.datePicks) && a.datePicks.indexOf(o.id) !== -1; });
-  var placeLead = computeLead(STATE.placeOptions, STATE.attendees, function(a, o){ return a.placePick === o.id; });
+  var placeLead = computeLead(STATE.placeOptions, STATE.attendees, function(a, o){ return Array.isArray(a.placePicks) && a.placePicks.indexOf(o.id) !== -1; });
 
   var dateSummaryText = !STATE.dateOptions.length
     ? '아직 후보 없음'
@@ -897,7 +905,7 @@ function render(){
   // ---- 장소 투표 카드 ----
   var placeOptionsHtml = STATE.placeOptions.length
     ? '<ul class="poll-list">' + STATE.placeOptions.map(function(o){
-        var count = STATE.attendees.filter(function(a){return a.placePick===o.id;}).length;
+        var count = STATE.attendees.filter(function(a){return Array.isArray(a.placePicks) && a.placePicks.indexOf(o.id)!==-1;}).length;
         var isLead = placeLead.count > 0 && placeLead.leaders.some(function(l){return l.id===o.id;});
         return (
           '<li class="poll-row' + (isLead?' poll-lead':'') + '">' +
@@ -922,7 +930,7 @@ function render(){
   var placePersonHtml = STATE.placeOptions.length
     ? (STATE.attendees.length
         ? '<ul class="roster">' + STATE.attendees.map(function(a){
-            return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' + placeSelect(a) + '</li>';
+            return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' + placeChips(a) + '</li>';
           }).join('') + '</ul>'
         : '<p class="empty">참석 체크에 이름을 먼저 추가해주세요.</p>')
     : '<p class="pref-hint">후보 장소를 추가하면 여기서 투표할 수 있어요.</p>';
@@ -1098,6 +1106,19 @@ function handleClick(e){
     });
     return;
   }
+  var togglePlacePick = e.target.closest('[data-action="toggle-place-pick"]');
+  if(togglePlacePick && !togglePlacePick.disabled){
+    var tppid = togglePlacePick.getAttribute('data-id');
+    var tppOptId = togglePlacePick.getAttribute('data-opt');
+    persist(function(data){
+      var a = data.attendees.find(function(x){ return x.id === tppid; });
+      if(!a) return;
+      if(!Array.isArray(a.placePicks)) a.placePicks = [];
+      var idx = a.placePicks.indexOf(tppOptId);
+      if(idx === -1) a.placePicks.push(tppOptId); else a.placePicks.splice(idx, 1);
+    });
+    return;
+  }
   var statusBtn = e.target.closest('[data-action="set-status"]');
   if(statusBtn && !statusBtn.disabled){
     var id = statusBtn.getAttribute('data-id');
@@ -1141,7 +1162,12 @@ function handleClick(e){
     if(!window.confirm('이 장소 후보를 삭제할까요? 이 후보에 투표한 사람은 미투표로 바뀌어요.')) return;
     persist(function(data){
       data.placeOptions = data.placeOptions.filter(function(o){ return o.id !== poid; });
-      data.attendees.forEach(function(a){ if(a.placePick === poid) a.placePick = null; });
+      data.attendees.forEach(function(a){
+        if(Array.isArray(a.placePicks)){
+          var idx = a.placePicks.indexOf(poid);
+          if(idx !== -1) a.placePicks.splice(idx, 1);
+        }
+      });
     });
     return;
   }
@@ -1168,7 +1194,7 @@ function handleClick(e){
     if(!isAdminNow()) return;
     if(!window.confirm('모든 인원의 장소 투표를 초기화할까요? (후보 목록은 유지돼요)')) return;
     persist(function(data){
-      data.attendees.forEach(function(a){ a.placePick = null; });
+      data.attendees.forEach(function(a){ a.placePicks = []; });
     });
     return;
   }
@@ -1212,16 +1238,8 @@ function handleClick(e){
 }
 
 function handleChange(e){
-  var placeSel = e.target.closest('[data-action="pick-place-pref"]');
-  if(placeSel){
-    var pid = placeSel.getAttribute('data-id');
-    var pval = placeSel.value || null;
-    persist(function(data){
-      var a = data.attendees.find(function(x){ return x.id === pid; });
-      if(a) a.placePick = pval;
-    });
-    return;
-  }
+  // 날짜/장소 선호는 이제 <select> 대신 클릭 토글(chip) 방식이라 handleClick에서 처리해요.
+  // change 이벤트를 쓰는 다른 입력이 생기면 여기에 추가하면 돼요.
 }
 
 function saveField(field){
@@ -1248,7 +1266,7 @@ function handleSubmit(e){
     var name = input.value.trim();
     if(!name) return;
     persist(function(data){
-      data.attendees.push({id: uid(), name: name, status: null, datePicks: [], placePick: null});
+      data.attendees.push({id: uid(), name: name, status: null, datePicks: [], placePicks: []});
     });
     var again = document.getElementById('new-name');
     if(again){ again.value = ''; again.focus(); }
