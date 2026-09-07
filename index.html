@@ -221,27 +221,9 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
   border-radius:999px;
   font-variant-numeric:tabular-nums;
 }
-.stat-yes{background:var(--attend-bg);color:var(--attend);}
-.stat-pending{background:var(--pending-bg);color:var(--pending);}
-.stat-no{background:var(--decline-bg);color:var(--decline);}
-.stat-novote{background:var(--surface-2);color:var(--ink-faint);border:1px solid var(--border);}
 .stat-saving{background:var(--surface);color:var(--ink-faint);border:1px solid var(--border);}
-.budget{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:6px 12px;
-  background:var(--surface-2);
-  border:1px dashed var(--border);
-  border-radius:12px;
-  padding:10px 14px;
-  margin-bottom:14px;
-  font-size:13px;
-}
-.budget-label{font-weight:700;color:var(--ink-muted);flex:none;}
-.budget-formula{color:var(--ink-faint);flex:1;min-width:120px;font-variant-numeric:tabular-nums;}
-.budget-total{font-weight:800;font-size:15px;color:var(--accent-strong);font-variant-numeric:tabular-nums;flex:none;}
+.poll-cost{font-size:12px;color:var(--ink-faint);flex:none;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.poll-row.poll-lead .poll-cost{color:var(--accent-strong);font-weight:700;}
 .callout{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   background:var(--pending-bg);
@@ -261,11 +243,6 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
   padding:6px 12px;border-radius:8px;cursor:pointer;flex:none;
 }
 .callout-btn:hover{color:var(--accent-strong);border-color:var(--accent);}
-.novote-tag{
-  font-size:11px;font-weight:700;color:var(--ink-faint);
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:999px;padding:3px 8px;flex:none;
-}
 .roster{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
 .roster-row{
   display:flex;align-items:center;gap:10px;
@@ -283,27 +260,6 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-.segmented{
-  display:inline-flex;
-  border:1px solid var(--border);
-  border-radius:10px;
-  overflow:hidden;
-  flex:none;
-}
-.segmented button{
-  border:none;
-  background:var(--surface);
-  color:var(--ink-muted);
-  font-size:12px;
-  font-weight:700;
-  padding:7px 10px;
-  cursor:pointer;
-  border-left:1px solid var(--border);
-}
-.segmented button:first-child{border-left:none;}
-.segmented button[data-status="yes"].active{background:var(--attend);color:#fff;}
-.segmented button[data-status="pending"].active{background:var(--pending);color:#fff;}
-.segmented button[data-status="no"].active{background:var(--decline);color:#fff;}
 .remove{
   border:none;background:transparent;color:var(--ink-faint);
   cursor:pointer;font-size:16px;line-height:1;width:26px;height:26px;
@@ -379,11 +335,6 @@ button.poll-main{border:none;background:transparent;color:inherit;font:inherit;t
 .voter-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
 .voter-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;}
 .voter-name{color:var(--ink);font-weight:500;}
-.voter-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;flex:none;}
-.voter-yes{background:var(--attend-bg);color:var(--attend);}
-.voter-no{background:var(--decline-bg);color:var(--decline);}
-.voter-pending{background:var(--pending-bg);color:var(--pending);}
-.voter-novote{background:var(--surface-2);color:var(--ink-faint);border:1px solid var(--border);}
 .voter-empty{font-size:13px;color:var(--ink-faint);margin:0;}
 .poll-place-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .poll-crown{
@@ -540,18 +491,18 @@ const DEFAULT_STATE = {
     {id:"p01", place:"육각고기"}
   ],
   attendees: [
-    {id:"m01", name:"김환", status:"yes", datePicks:[], placePicks:[]},
-    {id:"m02", name:"엄태인", status:"yes", datePicks:[], placePicks:[]},
-    {id:"m03", name:"유재형", status:"yes", datePicks:[], placePicks:[]},
-    {id:"m04", name:"이상현", status:"yes", datePicks:[], placePicks:[]},
-    {id:"m05", name:"이효성", status:"yes", datePicks:[], placePicks:[]},
-    {id:"m06", name:"임태영", status:"pending", datePicks:[], placePicks:[]},
-    {id:"m07", name:"장재성", status:"pending", datePicks:[], placePicks:[]},
-    {id:"m08", name:"최재영", status:"pending", datePicks:[], placePicks:[]},
-    {id:"m09", name:"최정", status:"pending", datePicks:[], placePicks:[]},
-    {id:"m10", name:"홍원일", status:"pending", datePicks:[], placePicks:[]},
-    {id:"m11", name:"이정희", status:"pending", datePicks:[], placePicks:[]},
-    {id:"m12", name:"임수철", status:"pending", datePicks:[], placePicks:[]}
+    {id:"m01", name:"김환", datePicks:[], placePicks:[]},
+    {id:"m02", name:"엄태인", datePicks:[], placePicks:[]},
+    {id:"m03", name:"유재형", datePicks:[], placePicks:[]},
+    {id:"m04", name:"이상현", datePicks:[], placePicks:[]},
+    {id:"m05", name:"이효성", datePicks:[], placePicks:[]},
+    {id:"m06", name:"임태영", datePicks:[], placePicks:[]},
+    {id:"m07", name:"장재성", datePicks:[], placePicks:[]},
+    {id:"m08", name:"최재영", datePicks:[], placePicks:[]},
+    {id:"m09", name:"최정", datePicks:[], placePicks:[]},
+    {id:"m10", name:"홍원일", datePicks:[], placePicks:[]},
+    {id:"m11", name:"이정희", datePicks:[], placePicks:[]},
+    {id:"m12", name:"임수철", datePicks:[], placePicks:[]}
   ],
   updatedAt: null
 };
@@ -674,7 +625,7 @@ function migrateState(data){
       a.placePicks = (a.placePick !== undefined && a.placePick !== null) ? [a.placePick] : [];
     }
     delete a.placePick;
-    if(a.status === undefined) a.status = null;
+    delete a.status;
   });
   return data;
 }
@@ -759,23 +710,6 @@ function summaryRow(iconSvg, label, text){
   );
 }
 
-function rosterRow(a){
-  var canEdit = canEditNow();
-  var isAdmin = isAdminNow();
-  return (
-    '<li class="roster-row" data-id="' + a.id + '">' +
-      '<span class="name">' + esc(a.name) + '</span>' +
-      (!a.status ? '<span class="novote-tag">미투표</span>' : '') +
-      '<div class="segmented" role="group" aria-label="' + esc(a.name) + ' 참석 여부">' +
-        '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="yes" class="' + (a.status==='yes'?'active':'') + '" ' + (canEdit?'':'disabled') + '>참석</button>' +
-        '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="pending" class="' + (a.status==='pending'?'active':'') + '" ' + (canEdit?'':'disabled') + '>미정</button>' +
-        '<button type="button" data-action="set-status" data-id="' + a.id + '" data-status="no" class="' + (a.status==='no'?'active':'') + '" ' + (canEdit?'':'disabled') + '>불참</button>' +
-      '</div>' +
-      (isAdmin ? '<button type="button" class="remove" data-action="remove" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 삭제">×</button>' : '') +
-    '</li>'
-  );
-}
-
 function dateChips(a){
   var canEdit = canEditNow();
   var picks = Array.isArray(a.datePicks) ? a.datePicks : [];
@@ -799,10 +733,6 @@ function placeChips(a){
 }
 
 function render(){
-  var yes = STATE.attendees.filter(function(a){return a.status==='yes';}).length;
-  var no = STATE.attendees.filter(function(a){return a.status==='no';}).length;
-  var pending = STATE.attendees.filter(function(a){return a.status==='pending';}).length;
-  var novote = STATE.attendees.filter(function(a){return !a.status;}).length;
   var canEdit = canEditNow();
   var isAdmin = isAdminNow();
 
@@ -829,25 +759,14 @@ function render(){
         ? '아직 투표 없음'
         : esc(placeLead.leaders.map(function(o){ return o.place; }).join(' / ')) + ' · ' + placeLead.count + '표');
 
-  var budgetHtml =
-    '<div class="budget">' +
-      '<span class="budget-label">예상 참가비</span>' +
-      '<span class="budget-formula">참석 ' + yes + '명 × ' + PER_PERSON_COST.toLocaleString('ko-KR') + '원</span>' +
-      '<span class="budget-total">' + (yes * PER_PERSON_COST).toLocaleString('ko-KR') + '원</span>' +
-    '</div>';
-
-  var novoteNames = STATE.attendees.filter(function(a){return !a.status;}).map(function(a){return a.name;});
-  var novoteCallout = novoteNames.length
-    ? '<div class="callout"><span>아직 참석 여부를 체크 안 한 사람: <b>' + esc(novoteNames.join(', ')) + '</b></span>' +
+  var dateNovoteNames = STATE.attendees.filter(function(a){return !Array.isArray(a.datePicks) || !a.datePicks.length;}).map(function(a){return a.name;});
+  var dateNovoteCallout = dateNovoteNames.length
+    ? '<div class="callout"><span>아직 날짜 투표를 안 한 사람: <b>' + esc(dateNovoteNames.join(', ')) + '</b></span>' +
         (canEdit ? '<button type="button" class="callout-btn" data-action="copy-novote">복사</button>' : '') +
       '</div>'
     : '';
 
-  var rosterHtml = STATE.attendees.length
-    ? '<ul class="roster">' + STATE.attendees.map(rosterRow).join('') + '</ul>'
-    : '<p class="empty">아직 등록된 인원이 없어요. 아래에서 이름을 추가해 보세요.</p>';
-
-  var addFormHtml = canEdit
+  var attendeeAddFormHtml = canEdit
     ? '<form class="add-form" id="add-form">' +
         '<input type="text" id="new-name" placeholder="이름 입력 후 추가" maxlength="20" autocomplete="off">' +
         '<button type="submit">추가</button>' +
@@ -871,9 +790,7 @@ function render(){
         var voters = STATE.attendees.filter(function(a){ return Array.isArray(a.datePicks) && a.datePicks.indexOf(o.id)!==-1; });
         var votersHtml = voters.length
           ? '<ul class="voter-list">' + voters.map(function(a){
-              var statusLabel = a.status === 'yes' ? '참석' : a.status === 'no' ? '불참' : a.status === 'pending' ? '미정' : '미투표';
-              var statusClass = a.status === 'yes' ? 'voter-yes' : a.status === 'no' ? 'voter-no' : a.status === 'pending' ? 'voter-pending' : 'voter-novote';
-              return '<li class="voter-row"><span class="voter-name">' + esc(a.name) + '</span><span class="voter-tag ' + statusClass + '">' + statusLabel + '</span></li>';
+              return '<li class="voter-row"><span class="voter-name">' + esc(a.name) + '</span></li>';
             }).join('') + '</ul>'
           : '<p class="voter-empty">아직 이 날짜를 선택한 사람이 없어요.</p>';
         return (
@@ -884,6 +801,7 @@ function render(){
                 '<span class="poll-chevron' + (isOpen?' poll-chevron-open':'') + '" aria-hidden="true">›</span>' +
               '</button>' +
               '<span class="poll-badge">' + count + '표</span>' +
+              '<span class="poll-cost">' + (count * PER_PERSON_COST).toLocaleString('ko-KR') + '원</span>' +
               (isAdmin ? '<button type="button" class="remove" data-action="remove-date-option" data-id="' + o.id + '" aria-label="' + esc(formatDateDisplay(o.date)) + ' 후보 삭제">×</button>' : '') +
             '</div>' +
             (isOpen ? '<div class="poll-detail">' + votersHtml + '</div>' : '') +
@@ -894,13 +812,15 @@ function render(){
 
   var dateCalendarHtml = isAdmin ? buildCalendarGrid(CAL_VIEW.y, CAL_VIEW.m, candidateISOs) : '';
 
-  var datePersonHtml = STATE.dateOptions.length
-    ? (STATE.attendees.length
-        ? '<ul class="roster">' + STATE.attendees.map(function(a){
-            return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' + dateChips(a) + '</li>';
-          }).join('') + '</ul>'
-        : '<p class="empty">참석 체크에 이름을 먼저 추가해주세요.</p>')
-    : '<p class="pref-hint">후보 날짜를 추가하면 여기서 투표할 수 있어요.</p>';
+  var datePersonHtml = (STATE.attendees.length
+    ? '<ul class="roster">' + STATE.attendees.map(function(a){
+        return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' +
+          (STATE.dateOptions.length ? dateChips(a) : '') +
+          (isAdmin ? '<button type="button" class="remove" data-action="remove" data-id="' + a.id + '" aria-label="' + esc(a.name) + ' 삭제">×</button>' : '') +
+        '</li>';
+      }).join('') + '</ul>'
+    : '<p class="empty">아직 등록된 인원이 없어요. 아래에서 이름을 추가해 보세요.</p>') +
+    (!STATE.dateOptions.length ? '<p class="pref-hint">후보 날짜를 추가하면 여기서 투표할 수 있어요.</p>' : '');
 
   // ---- 장소 투표 카드 ----
   var placeOptionsHtml = STATE.placeOptions.length
@@ -932,7 +852,7 @@ function render(){
         ? '<ul class="roster">' + STATE.attendees.map(function(a){
             return '<li class="roster-row"><span class="name">' + esc(a.name) + '</span>' + placeChips(a) + '</li>';
           }).join('') + '</ul>'
-        : '<p class="empty">참석 체크에 이름을 먼저 추가해주세요.</p>')
+        : '<p class="empty">날짜 투표에서 이름을 먼저 추가해주세요.</p>')
     : '<p class="pref-hint">후보 장소를 추가하면 여기서 투표할 수 있어요.</p>';
 
   document.getElementById('app').innerHTML =
@@ -946,33 +866,19 @@ function render(){
       '</div>' +
       adminRow() +
     '</header>' +
-    '<section class="card attend">' +
-      '<div class="section-head">' +
-        '<h2>참석 체크</h2>' +
-        '<div class="section-actions">' +
-          '<div class="stats">' +
-            '<span class="stat stat-yes">참석 ' + yes + '</span>' +
-            '<span class="stat stat-pending">미정 ' + pending + '</span>' +
-            '<span class="stat stat-no">불참 ' + no + '</span>' +
-            '<span class="stat stat-novote">미투표 ' + novote + '</span>' +
-            (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
-          '</div>' +
-          (isAdmin ? '<button type="button" class="reset-btn" data-action="reset-attend">참석 초기화</button>' : '') +
-        '</div>' +
-      '</div>' +
-      budgetHtml +
-      novoteCallout +
-      rosterHtml +
-      addFormHtml +
-    '</section>' +
     '<section class="card">' +
       '<div class="section-head">' +
         '<h2>날짜 투표</h2>' +
-        (isAdmin ? '<div class="section-actions"><button type="button" class="reset-btn" data-action="reset-date">투표 초기화</button></div>' : '') +
+        '<div class="section-actions">' +
+          (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
+          (isAdmin ? '<button type="button" class="reset-btn" data-action="reset-date">투표 초기화</button>' : '') +
+        '</div>' +
       '</div>' +
+      dateNovoteCallout +
       dateOptionsHtml +
       dateCalendarHtml +
       datePersonHtml +
+      attendeeAddFormHtml +
     '</section>' +
     '<section class="card">' +
       '<div class="section-head">' +
@@ -1119,16 +1025,6 @@ function handleClick(e){
     });
     return;
   }
-  var statusBtn = e.target.closest('[data-action="set-status"]');
-  if(statusBtn && !statusBtn.disabled){
-    var id = statusBtn.getAttribute('data-id');
-    var status = statusBtn.getAttribute('data-status');
-    persist(function(data){
-      var a = data.attendees.find(function(x){ return x.id === id; });
-      if(a) a.status = status;
-    });
-    return;
-  }
   var removeBtn = e.target.closest('[data-action="remove"]');
   if(removeBtn){
     if(!isAdminNow()) return;
@@ -1168,15 +1064,6 @@ function handleClick(e){
           if(idx !== -1) a.placePicks.splice(idx, 1);
         }
       });
-    });
-    return;
-  }
-  var resetAttendBtn = e.target.closest('[data-action="reset-attend"]');
-  if(resetAttendBtn){
-    if(!isAdminNow()) return;
-    if(!window.confirm('모든 인원의 참석 여부를 미투표 상태로 초기화할까요? (명단은 유지돼요)')) return;
-    persist(function(data){
-      data.attendees.forEach(function(a){ a.status = null; });
     });
     return;
   }
@@ -1222,8 +1109,8 @@ function handleClick(e){
   }
   var copyBtn = e.target.closest('[data-action="copy-novote"]');
   if(copyBtn){
-    var names = STATE.attendees.filter(function(a){return !a.status;}).map(function(a){return a.name;});
-    var text = '아직 참석 여부를 체크 안 한 사람: ' + names.join(', ');
+    var names = STATE.attendees.filter(function(a){return !Array.isArray(a.datePicks) || !a.datePicks.length;}).map(function(a){return a.name;});
+    var text = '아직 날짜 투표를 안 한 사람: ' + names.join(', ');
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){
         showToast('복사했어요.');
@@ -1266,7 +1153,7 @@ function handleSubmit(e){
     var name = input.value.trim();
     if(!name) return;
     persist(function(data){
-      data.attendees.push({id: uid(), name: name, status: null, datePicks: [], placePicks: []});
+      data.attendees.push({id: uid(), name: name, datePicks: [], placePicks: []});
     });
     var again = document.getElementById('new-name');
     if(again){ again.value = ''; again.focus(); }
