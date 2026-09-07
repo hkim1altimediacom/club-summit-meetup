@@ -80,6 +80,12 @@ body{
   padding:32px 16px 64px;
 }
 .wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+.poll-columns{display:flex;flex-direction:column;gap:16px;}
+@media (min-width:900px){
+  .wrap{max-width:980px;}
+  .poll-columns{flex-direction:row;align-items:flex-start;}
+  .poll-columns > section{flex:1;min-width:0;}
+}
 .readonly-banner{
   background:var(--surface-2);
   border:1px solid var(--border);
@@ -866,29 +872,31 @@ function render(){
       '</div>' +
       adminRow() +
     '</header>' +
-    '<section class="card">' +
-      '<div class="section-head">' +
-        '<h2>날짜 투표</h2>' +
-        '<div class="section-actions">' +
-          (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
-          (isAdmin ? '<button type="button" class="reset-btn" data-action="reset-date">투표 초기화</button>' : '') +
+    '<div class="poll-columns">' +
+      '<section class="card">' +
+        '<div class="section-head">' +
+          '<h2>날짜 투표</h2>' +
+          '<div class="section-actions">' +
+            (SAVING ? '<span class="stat stat-saving">저장 중…</span>' : '') +
+            (isAdmin ? '<button type="button" class="reset-btn" data-action="reset-date">투표 초기화</button>' : '') +
+          '</div>' +
         '</div>' +
-      '</div>' +
-      dateNovoteCallout +
-      dateOptionsHtml +
-      dateCalendarHtml +
-      datePersonHtml +
-      attendeeAddFormHtml +
-    '</section>' +
-    '<section class="card">' +
-      '<div class="section-head">' +
-        '<h2>장소 투표</h2>' +
-        (isAdmin ? '<div class="section-actions"><button type="button" class="reset-btn" data-action="reset-place">투표 초기화</button></div>' : '') +
-      '</div>' +
-      placeOptionsHtml +
-      addPlaceHtml +
-      placePersonHtml +
-    '</section>' +
+        dateNovoteCallout +
+        dateOptionsHtml +
+        dateCalendarHtml +
+        datePersonHtml +
+        attendeeAddFormHtml +
+      '</section>' +
+      '<section class="card">' +
+        '<div class="section-head">' +
+          '<h2>장소 투표</h2>' +
+          (isAdmin ? '<div class="section-actions"><button type="button" class="reset-btn" data-action="reset-place">투표 초기화</button></div>' : '') +
+        '</div>' +
+        placeOptionsHtml +
+        addPlaceHtml +
+        placePersonHtml +
+      '</section>' +
+    '</div>' +
     updatedHtml;
 
   if(EDITING === 'title'){
