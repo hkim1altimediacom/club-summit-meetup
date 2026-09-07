@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /clubEvents/{eventId} {
+      // 누구나 읽을 수 있음 (로그인 없이도 페이지 열람 가능)
+      allow read: if true;
+
+      // 쓰기는 "익명 로그인"된 사용자만 가능 (화면에는 로그인 UI가 전혀 안 보임 —
+      // 페이지가 열리자마자 자동으로 익명 로그인됨). 이걸로 완전히 오픈된
+      // 쓰기 권한보다는 한 단계 더 안전하게, 그리고 데이터 형태도 검증합니다.
+      allow write: if request.auth != null
+        && request.resource.data.keys().hasOnly(['title','dateOptions','placeOptions','attendees','logs','updatedAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() < 60
+        && request.resource.data.dateOptions is list
+        && request.resource.data.dateOptions.size() < 50
+        && request.resource.data.placeOptions is list
+        && request.resource.data.placeOptions.size() < 50
+        && request.resource.data.attendees is list
+        && request.resource.data.attendees.size() < 200
+        && request.resource.data.logs is list
+        && request.resource.data.logs.size() < 50;
+    }
+  }
+}

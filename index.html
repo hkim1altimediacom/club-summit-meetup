@@ -384,6 +384,19 @@ button.poll-main{border:none;background:transparent;color:inherit;font:inherit;t
 .chip-btn.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .chip-btn:disabled{cursor:default;opacity:.7;}
 .chip-btn:disabled:hover{border-color:var(--border);color:var(--ink-muted);}
+.log-board{margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
+.log-board-head{margin-bottom:8px;}
+.log-board-head h3{font-size:13px;font-weight:700;color:var(--ink-muted);margin:0;}
+.log-list{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+.log-row{display:flex;align-items:baseline;gap:8px;font-size:13px;padding:7px 10px;border-radius:10px;background:var(--surface-2);}
+.log-name{font-weight:700;color:var(--ink);flex:none;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.log-text{flex:1;min-width:0;color:var(--ink-muted);word-break:break-word;}
+.log-time{font-size:11px;color:var(--ink-faint);flex:none;white-space:nowrap;}
+.log-remove{border:none;background:transparent;color:var(--ink-faint);cursor:pointer;font-size:14px;line-height:1;flex:none;padding:2px 4px;border-radius:6px;}
+.log-remove:hover{background:var(--decline-bg);color:var(--decline);}
+.log-empty{font-size:13px;color:var(--ink-faint);margin:0 0 10px;}
+.log-form input#log-name{flex:none;width:84px;}
+.log-form input#log-text{flex:1;min-width:0;}
 .admin-row{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
 .admin-badge{font-size:11px;font-weight:700;color:var(--attend);background:var(--attend-bg);padding:5px 10px;border-radius:999px;flex:none;}
 .admin-btn{border:1px solid var(--border);background:var(--surface-2);color:var(--ink-muted);font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;cursor:pointer;flex:none;}
@@ -490,6 +503,7 @@ const HOLIDAYS_KO = {
 
 const DEFAULT_STATE = {
   title: "정상회담",
+  logs: [],
   dateOptions: [
     {id:"d01", date:"2026-09-22"}
   ],
@@ -610,6 +624,7 @@ function buildCalendarGrid(y, m, candidateISOs){
 
 function migrateState(data){
   if(!Array.isArray(data.attendees)) data.attendees = [];
+  if(!Array.isArray(data.logs)) data.logs = [];
   if(!Array.isArray(data.dateOptions) || !data.dateOptions.length){
     data.dateOptions = data.date ? [{id:'d-legacy', date: data.date}] : [];
   }
@@ -765,6 +780,29 @@ function render(){
         ? '아직 투표 없음'
         : esc(placeLead.leaders.map(function(o){ return o.place; }).join(' / ')) + ' · ' + placeLead.count + '표');
 
+  // ---- 한 줄 게시판 ----
+  var logsSorted = Array.isArray(STATE.logs) ? STATE.logs.slice().reverse() : [];
+  var logsHtml = logsSorted.length
+    ? '<ul class="log-list">' + logsSorted.map(function(l){
+        return '<li class="log-row">' +
+          '<span class="log-name">' + esc(l.name) + '</span>' +
+          '<span class="log-text">' + esc(l.text) + '</span>' +
+          '<span class="log-time">' + esc(formatUpdated(l.ts)) + '</span>' +
+          (isAdmin ? '<button type="button" class="log-remove" data-action="remove-log" data-id="' + l.id + '" aria-label="글 삭제">×</button>' : '') +
+        '</li>';
+      }).join('') + '</ul>'
+    : '<p class="log-empty">아직 남긴 글이 없어요.</p>';
+
+  var lastLogName = '';
+  try { lastLogName = localStorage.getItem('clubLogName') || ''; } catch(e){}
+  var logFormHtml = canEdit
+    ? '<form class="add-form log-form" id="log-form">' +
+        '<input type="text" id="log-name" placeholder="이름" maxlength="12" autocomplete="off" value="' + esc(lastLogName) + '">' +
+        '<input type="text" id="log-text" placeholder="한 줄 남기기" maxlength="60" autocomplete="off">' +
+        '<button type="submit">남기기</button>' +
+      '</form>'
+    : '';
+
   var dateNovoteNames = STATE.attendees.filter(function(a){return !Array.isArray(a.datePicks) || !a.datePicks.length;}).map(function(a){return a.name;});
   var dateNovoteCallout = dateNovoteNames.length
     ? '<div class="callout"><span>아직 날짜 투표를 안 한 사람: <b>' + esc(dateNovoteNames.join(', ')) + '</b></span>' +
@@ -869,6 +907,11 @@ function render(){
       '<div class="meta">' +
         summaryRow(iconCal(), '날짜', dateSummaryText) +
         summaryRow(iconPin(), '장소', placeSummaryText) +
+      '</div>' +
+      '<div class="log-board">' +
+        '<div class="log-board-head"><h3>한 줄 게시판</h3></div>' +
+        logsHtml +
+        logFormHtml +
       '</div>' +
       adminRow() +
     '</header>' +
@@ -1075,6 +1118,17 @@ function handleClick(e){
     });
     return;
   }
+  var removeLogBtn = e.target.closest('[data-action="remove-log"]');
+  if(removeLogBtn){
+    if(!isAdminNow()) return;
+    var lid = removeLogBtn.getAttribute('data-id');
+    if(!window.confirm('이 글을 삭제할까요?')) return;
+    persist(function(data){
+      if(!Array.isArray(data.logs)) data.logs = [];
+      data.logs = data.logs.filter(function(l){ return l.id !== lid; });
+    });
+    return;
+  }
   var resetDateBtn = e.target.closest('[data-action="reset-date"]');
   if(resetDateBtn){
     if(!isAdminNow()) return;
@@ -1155,6 +1209,24 @@ function handleKeydown(e){
 }
 
 function handleSubmit(e){
+  if(e.target && e.target.id === 'log-form'){
+    e.preventDefault();
+    var lnameInput = document.getElementById('log-name');
+    var ltextInput = document.getElementById('log-text');
+    var lname = lnameInput.value.trim();
+    var ltext = ltextInput.value.trim();
+    if(!lname || !ltext) return;
+    try { localStorage.setItem('clubLogName', lname); } catch(e2){}
+    persist(function(data){
+      if(!Array.isArray(data.logs)) data.logs = [];
+      data.logs.push({id: uid(), name: lname, text: ltext, ts: new Date().toISOString()});
+      // 문서 하나에 모든 데이터가 들어있어서 너무 커지지 않도록 최근 50개만 유지해요.
+      if(data.logs.length > 50) data.logs = data.logs.slice(data.logs.length - 50);
+    });
+    var againText = document.getElementById('log-text');
+    if(againText){ againText.value = ''; againText.focus(); }
+    return;
+  }
   if(e.target && e.target.id === 'add-form'){
     e.preventDefault();
     var input = document.getElementById('new-name');
