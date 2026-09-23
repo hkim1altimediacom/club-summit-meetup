@@ -248,6 +248,8 @@ button.cal-day.cal-selected{background:var(--accent);color:var(--accent-ink);fon
   color:var(--ink-muted);
 }
 .callout b{color:var(--ink);font-weight:700;}
+.callout-decline{background:var(--decline-bg);}
+.callout-decline b{color:var(--decline);}
 .callout-btn{
   border:1px solid var(--border);
   background:var(--surface);
@@ -390,6 +392,9 @@ button.poll-main{border:none;background:transparent;color:inherit;font:inherit;t
 .chip-btn:hover{border-color:var(--accent);color:var(--accent-strong);}
 .chip-btn.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .chip-btn:disabled{cursor:default;opacity:.7;}
+.chip-btn.chip-decline{margin-left:2px;}
+.chip-btn.chip-decline:hover{border-color:var(--decline);color:var(--decline);}
+.chip-btn.chip-decline.active{background:var(--decline);border-color:var(--decline);color:#fff;}
 .chip-btn:disabled:hover{border-color:var(--border);color:var(--ink-muted);}
 .log-board{margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
 .log-board-head{margin-bottom:8px;}
@@ -521,18 +526,18 @@ const DEFAULT_STATE = {
     {id:"p01", place:"육각고기"}
   ],
   attendees: [
-    {id:"m01", name:"김환", datePicks:[], placePicks:[]},
-    {id:"m02", name:"엄태인", datePicks:[], placePicks:[]},
-    {id:"m03", name:"유재형", datePicks:[], placePicks:[]},
-    {id:"m04", name:"이상현", datePicks:[], placePicks:[]},
-    {id:"m05", name:"이효성", datePicks:[], placePicks:[]},
-    {id:"m06", name:"임태영", datePicks:[], placePicks:[]},
-    {id:"m07", name:"장재성", datePicks:[], placePicks:[]},
-    {id:"m08", name:"최재영", datePicks:[], placePicks:[]},
-    {id:"m09", name:"최정", datePicks:[], placePicks:[]},
-    {id:"m10", name:"홍원일", datePicks:[], placePicks:[]},
-    {id:"m11", name:"이정희", datePicks:[], placePicks:[]},
-    {id:"m12", name:"임수철", datePicks:[], placePicks:[]}
+    {id:"m01", name:"김환", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m02", name:"엄태인", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m03", name:"유재형", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m04", name:"이상현", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m05", name:"이효성", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m06", name:"임태영", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m07", name:"장재성", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m08", name:"최재영", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m09", name:"최정", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m10", name:"홍원일", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m11", name:"이정희", datePicks:[], placePicks:[], dateDeclined:false},
+    {id:"m12", name:"임수철", datePicks:[], placePicks:[], dateDeclined:false}
   ],
   updatedAt: null
 };
@@ -718,6 +723,7 @@ function migrateState(data){
     }
     delete a.placePick;
     delete a.status;
+    if(typeof a.dateDeclined !== 'boolean') a.dateDeclined = false;
   });
   return data;
 }
@@ -814,11 +820,13 @@ function summaryRow(iconSvg, label, text, valueId){
 function dateChips(a){
   var canEdit = canEditNow();
   var picks = Array.isArray(a.datePicks) ? a.datePicks : [];
-  return '<div class="chip-group" role="group" aria-label="' + esc(a.name) + ' 날짜 선호">' +
+  var declined = !!a.dateDeclined;
+  return '<div class="chip-group" role="group" aria-label="' + esc(a.name) + ' 날짜 선호" data-row="' + a.id + '">' +
     STATE.dateOptions.map(function(o){
-      var picked = picks.indexOf(o.id) !== -1;
+      var picked = !declined && picks.indexOf(o.id) !== -1;
       return '<button type="button" class="chip-btn' + (picked?' active':'') + '" data-action="toggle-date-pick" data-id="' + a.id + '" data-opt="' + o.id + '" aria-pressed="' + (picked?'true':'false') + '" ' + (canEdit?'':'disabled') + '>' + esc(formatDateShort(o.date)) + '</button>';
     }).join('') +
+    '<button type="button" class="chip-btn chip-decline' + (declined?' active':'') + '" data-action="toggle-date-decline" data-id="' + a.id + '" aria-pressed="' + (declined?'true':'false') + '" ' + (canEdit?'':'disabled') + '>불참</button>' +
   '</div>';
 }
 
@@ -864,12 +872,20 @@ function buildPlaceSummaryText(){
 }
 function buildDateNovoteCallout(){
   var canEdit = canEditNow();
-  var dateNovoteNames = STATE.attendees.filter(function(a){return !Array.isArray(a.datePicks) || !a.datePicks.length;}).map(function(a){return a.name;});
-  return dateNovoteNames.length
-    ? '<div class="callout"><span>아직 날짜 투표를 안 한 사람: <b>' + esc(dateNovoteNames.join(', ')) + '</b></span>' +
+  var dateNovoteNames = STATE.attendees.filter(function(a){
+    return !a.dateDeclined && (!Array.isArray(a.datePicks) || !a.datePicks.length);
+  }).map(function(a){return a.name;});
+  var declinedNames = STATE.attendees.filter(function(a){ return a.dateDeclined; }).map(function(a){return a.name;});
+  var parts = '';
+  if(dateNovoteNames.length){
+    parts += '<div class="callout"><span>아직 날짜 투표를 안 한 사람: <b>' + esc(dateNovoteNames.join(', ')) + '</b></span>' +
         (canEdit ? '<button type="button" class="callout-btn" data-action="copy-novote">복사</button>' : '') +
-      '</div>'
-    : '';
+      '</div>';
+  }
+  if(declinedNames.length){
+    parts += '<div class="callout callout-decline"><span>불참: <b>' + esc(declinedNames.join(', ')) + '</b></span></div>';
+  }
+  return parts;
 }
 function buildDateOptionsHtml(){
   var isAdmin = isAdminNow();
@@ -949,7 +965,12 @@ function toggleDatePickOn(data, attendeeId, optId){
   if(!a) return;
   if(!Array.isArray(a.datePicks)) a.datePicks = [];
   var idx = a.datePicks.indexOf(optId);
-  if(idx === -1) a.datePicks.push(optId); else a.datePicks.splice(idx, 1);
+  if(idx === -1){
+    a.datePicks.push(optId);
+    a.dateDeclined = false; // 날짜를 고르면 불참 상태는 자동으로 풀려요.
+  } else {
+    a.datePicks.splice(idx, 1);
+  }
 }
 function togglePlacePickOn(data, attendeeId, optId){
   var a = data.attendees.find(function(x){ return x.id === attendeeId; });
@@ -957,6 +978,22 @@ function togglePlacePickOn(data, attendeeId, optId){
   if(!Array.isArray(a.placePicks)) a.placePicks = [];
   var idx = a.placePicks.indexOf(optId);
   if(idx === -1) a.placePicks.push(optId); else a.placePicks.splice(idx, 1);
+}
+// 불참 토글: 켜면 그동안 고른 날짜는 비워요 (날짜 선택과 불참은 동시에 될 수 없어요).
+function toggleDateDeclineOn(data, attendeeId){
+  var a = data.attendees.find(function(x){ return x.id === attendeeId; });
+  if(!a) return;
+  a.dateDeclined = !a.dateDeclined;
+  if(a.dateDeclined) a.datePicks = [];
+}
+// 특정 한 명의 날짜 선호 칩 영역만 다시 그려요 (그 사람의 날짜 선택/불참 상태만
+// 화면에 반영하면 되니, 명단 전체나 페이지 전체를 다시 그릴 필요가 없어요).
+function patchAttendeeDateChips(attendeeId){
+  if(!isSafeAttrValue(attendeeId)) return;
+  var a = STATE.attendees.find(function(x){ return x.id === attendeeId; });
+  if(!a) return;
+  var wrap = document.querySelector('.chip-group[data-row="' + attendeeId + '"]');
+  if(wrap) wrap.outerHTML = dateChips(a);
 }
 
 function render(){
@@ -1247,24 +1284,45 @@ function handleClick(e){
   if(toggleDatePick && !toggleDatePick.disabled){
     var tpid = toggleDatePick.getAttribute('data-id');
     var tpOptId = toggleDatePick.getAttribute('data-opt');
-    // 1) 누른 칩 자체는 화면 전체를 다시 그리지 않고 바로 반영해요.
-    var tpWasActive = toggleDatePick.classList.contains('active');
-    toggleDatePick.classList.toggle('active', !tpWasActive);
-    toggleDatePick.setAttribute('aria-pressed', (!tpWasActive) ? 'true' : 'false');
-    // 2) 투표 현황(집계/미투표 안내/요약 문구)만 함께 갱신해요.
+    var tpAttendee = STATE.attendees.find(function(x){ return x.id === tpid; });
+    // 되돌리기용으로 지금 상태를 그대로 저장해둬요 (날짜를 고르면 불참이 자동
+    // 해제되는 것처럼, 토글 한 번에 여러 값이 같이 바뀔 수 있어서 "다시 토글"로는
+    // 정확히 복구가 안 돼요).
+    var tpPrevPicks = tpAttendee && Array.isArray(tpAttendee.datePicks) ? tpAttendee.datePicks.slice() : [];
+    var tpPrevDeclined = tpAttendee ? !!tpAttendee.dateDeclined : false;
+    // 1) 로컬 상태를 먼저 바꾸고, 이 사람의 칩 영역만 즉시 다시 그려요.
     toggleDatePickOn(STATE, tpid, tpOptId);
+    patchAttendeeDateChips(tpid);
+    // 2) 투표 현황(집계/미투표 안내/요약 문구)도 함께 갱신해요.
     patchDateVoteUI();
     // 3) 서버에 저장하고, 실패하면 방금 반영한 내용을 되돌려요.
     persist(function(data){ toggleDatePickOn(data, tpid, tpOptId); }, {
       quiet: true,
       onError: function(){
-        toggleDatePickOn(STATE, tpid, tpOptId);
+        var a = STATE.attendees.find(function(x){ return x.id === tpid; });
+        if(a){ a.datePicks = tpPrevPicks; a.dateDeclined = tpPrevDeclined; }
+        patchAttendeeDateChips(tpid);
         patchDateVoteUI();
-        var btn = document.querySelector('[data-action="toggle-date-pick"][data-id="' + tpid + '"][data-opt="' + tpOptId + '"]');
-        if(btn){
-          btn.classList.toggle('active', tpWasActive);
-          btn.setAttribute('aria-pressed', tpWasActive ? 'true' : 'false');
-        }
+      }
+    });
+    return;
+  }
+  var toggleDateDecline = e.target.closest('[data-action="toggle-date-decline"]');
+  if(toggleDateDecline && !toggleDateDecline.disabled){
+    var tdid = toggleDateDecline.getAttribute('data-id');
+    var tdAttendee = STATE.attendees.find(function(x){ return x.id === tdid; });
+    var tdPrevPicks = tdAttendee && Array.isArray(tdAttendee.datePicks) ? tdAttendee.datePicks.slice() : [];
+    var tdPrevDeclined = tdAttendee ? !!tdAttendee.dateDeclined : false;
+    toggleDateDeclineOn(STATE, tdid);
+    patchAttendeeDateChips(tdid);
+    patchDateVoteUI();
+    persist(function(data){ toggleDateDeclineOn(data, tdid); }, {
+      quiet: true,
+      onError: function(){
+        var a = STATE.attendees.find(function(x){ return x.id === tdid; });
+        if(a){ a.datePicks = tdPrevPicks; a.dateDeclined = tdPrevDeclined; }
+        patchAttendeeDateChips(tdid);
+        patchDateVoteUI();
       }
     });
     return;
@@ -1356,7 +1414,7 @@ function handleClick(e){
     if(!isAdminNow()) return;
     if(!window.confirm('모든 인원의 날짜 투표를 초기화할까요? (후보 목록은 유지돼요)')) return;
     persist(function(data){
-      data.attendees.forEach(function(a){ a.datePicks = []; });
+      data.attendees.forEach(function(a){ a.datePicks = []; a.dateDeclined = false; });
     });
     return;
   }
@@ -1393,7 +1451,7 @@ function handleClick(e){
   }
   var copyBtn = e.target.closest('[data-action="copy-novote"]');
   if(copyBtn){
-    var names = STATE.attendees.filter(function(a){return !Array.isArray(a.datePicks) || !a.datePicks.length;}).map(function(a){return a.name;});
+    var names = STATE.attendees.filter(function(a){return !a.dateDeclined && (!Array.isArray(a.datePicks) || !a.datePicks.length);}).map(function(a){return a.name;});
     var text = '아직 날짜 투표를 안 한 사람: ' + names.join(', ');
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){
@@ -1455,7 +1513,7 @@ function handleSubmit(e){
     var name = input.value.trim();
     if(!name) return;
     persist(function(data){
-      data.attendees.push({id: uid(), name: name, datePicks: [], placePicks: []});
+      data.attendees.push({id: uid(), name: name, datePicks: [], placePicks: [], dateDeclined: false});
     });
     var again = document.getElementById('new-name');
     if(again){ again.value = ''; again.focus(); }
